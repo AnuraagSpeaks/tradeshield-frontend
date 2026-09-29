@@ -2,11 +2,19 @@ export interface User {
   id: string;
   email: string;
   business_name: string;
+  contact_person?: string;
+  designation?: string;
   gst: string;
+  pan?: string;
   mobile: string;
   city: string;
+  state?: string;
+  category?: string;
   role: "buyer" | "supplier" | "admin";
+  plan_tier?: "buyer_free" | "growth" | "business" | "enterprise";
+  pass_id?: string;
   verified: boolean;
+  token?: string;
 }
 
 export interface Milestone {

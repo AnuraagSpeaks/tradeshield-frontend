@@ -26,9 +26,14 @@ import {
   X
 } from "lucide-react";
 
+import { useAuth } from "../context/AuthContext";
+
 export const TradeDashboard: React.FC = () => {
+  const { user, logout } = useAuth();
   // Active Persona / Role
-  const [role, setRole] = useState<"BUYER" | "SUPPLIER">("BUYER");
+  const [role, setRole] = useState<"BUYER" | "SUPPLIER">(
+    user?.role === "supplier" ? "SUPPLIER" : "BUYER"
+  );
 
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [summary, setSummary] = useState<EscrowSummary | null>(null);
@@ -178,8 +183,10 @@ export const TradeDashboard: React.FC = () => {
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
             {role === "BUYER" ? "Buyer Procurement Portal" : "Supplier Fulfillment & Payout Portal"}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-            {role === "BUYER"
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-mono">
+            {user
+              ? `Logged in as ${user.business_name} (${user.city || "India"}) • GSTIN: ${user.gst} • Pass ID: ${user.pass_id || "PSX-ACTIVE"}`
+              : role === "BUYER"
               ? "Logged in as Apex Auto Components Pvt Ltd (Pune) • GSTIN: 27AAACA1234A1Z5"
               : "Logged in as Bharat Precision Castings Ltd (Vadodara) • GSTIN: 24AAACB5678B1Z2"}
           </p>

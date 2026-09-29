@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { 
   X, 
   Check, 
@@ -11,8 +11,11 @@ import {
   ArrowRight, 
   Download, 
   Sparkles,
-  Zap
+  Zap,
+  AlertCircle
 } from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { verifyGSTIN } from "../api/client";
 
 export interface PlanDetails {
   id: "buyer_free" | "growth" | "business" | "enterprise";
@@ -132,17 +135,40 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
   onClose,
   onSuccessProceed,
 }) => {
+  const { user, register, updateUser } = useAuth();
   const [selectedPlanId, setSelectedPlanId] = useState<string>(initialPlanId || "business");
   const [billingCycle, setBillingCycle] = useState<"monthly" | "annual">("monthly");
   const [paymentMethod, setPaymentMethod] = useState<"upi" | "card" | "netbanking">("upi");
   const [step, setStep] = useState<"details" | "payment" | "success">("details");
 
   // Form State
-  const [companyName, setCompanyName] = useState("Rawat Handlooms Ltd");
-  const [gstin, setGstin] = useState("07AAAAA1111A1ZA");
-  const [email, setEmail] = useState("amit@rawathandlooms.in");
-  const [phone, setPhone] = useState("9876543210");
+  const [companyName, setCompanyName] = useState(user?.business_name || "");
+  const [contactPerson, setContactPerson] = useState(user?.contact_person || "");
+  const [designation, setDesignation] = useState(user?.designation || "Director");
+  const [gstin, setGstin] = useState(user?.gst || "");
+  const [email, setEmail] = useState(user?.email || "");
+  const [phone, setPhone] = useState(user?.mobile || "");
+  const [city, setCity] = useState(user?.city || "Mumbai");
   const [subId, setSubId] = useState("");
+  const [isVerifyingGst, setIsVerifyingGst] = useState(false);
+  const [errorMsg, setErrorMsg] = useState("");
+
+  useEffect(() => {
+    if (initialPlanId) {
+      setSelectedPlanId(initialPlanId);
+    }
+  }, [initialPlanId]);
+
+  useEffect(() => {
+    if (user) {
+      if (user.business_name) setCompanyName(user.business_name);
+      if (user.contact_person) setContactPerson(user.contact_person);
+      if (user.gst) setGstin(user.gst);
+      if (user.email) setEmail(user.email);
+      if (user.mobile) setPhone(user.mobile);
+      if (user.city) setCity(user.city);
+    }
+  }, [user]);
 
   if (!isOpen) return null;
 
@@ -151,12 +177,72 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
   const gstAmount = basePrice > 0 ? Math.round(basePrice * 0.18) : 0;
   const totalPrice = basePrice + gstAmount;
 
-  const handleProceedToPayment = (e: React.FormEvent) => {
+  const handleVerifyGst = async () => {
+    if (!gstin || gstin.trim().length < 10) {
+      setErrorMsg("Please enter a valid 15-character GSTIN or PAN");
+      return;
+    }
+    setIsVerifyingGst(true);
+    setErrorMsg("");
+    try {
+      const res = await verifyGSTIN(gstin.trim().toUpperCase());
+      if (res.valid && res.legal_name) {
+        setCompanyName(res.legal_name);
+      }
+    } catch {
+      // Offline fallback
+    } finally {
+      setIsVerifyingGst(false);
+    }
+  };
+
+  const handleFillDemo = () => {
+    if (currentPlan.category === "Buyer Plan") {
+      setCompanyName("Rawat Handlooms & Textiles Ltd");
+      setContactPerson("Amit Rawat");
+      setDesignation("Head of Procurement");
+      setGstin("07AAAAA1111A1ZA");
+      setEmail("procurement@rawathandlooms.in");
+      setPhone("9876543210");
+      setCity("New Delhi");
+    } else {
+      setCompanyName("Bharat Precision Castings Ltd");
+      setContactPerson("Rajesh Singhania");
+      setDesignation("Managing Director");
+      setGstin("24AABCB5678B1Z2");
+      setEmail("sales@bharatcastings.com");
+      setPhone("9898123456");
+      setCity("Vadodara");
+    }
+    setErrorMsg("");
+  };
+
+  const handleProceedToPayment = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!companyName.trim() || !email.trim() || !phone.trim()) {
+      setErrorMsg("Please provide all required business identity details (Firm Name, Email, and Phone).");
+      return;
+    }
+
+    const role = currentPlan.category === "Buyer Plan" ? "buyer" : "supplier";
+    const generatedSubId = "PSX-SUB-" + Math.floor(100000 + Math.random() * 900000);
+    setSubId(generatedSubId);
+
+    // Register / save auth state
+    await register({
+      business_name: companyName,
+      contact_person: contactPerson || "Authorized Signatory",
+      designation: designation,
+      email: email,
+      mobile: phone,
+      gst: gstin || "27AAAAA1111A1ZA",
+      city: city,
+      role: role,
+      plan_tier: currentPlan.id,
+      pass_id: generatedSubId,
+    });
+
     if (currentPlan.priceMonthly === 0) {
-      // Free Plan instant activation
-      const generatedId = "SUB-FREE-" + Math.floor(100000 + Math.random() * 900000);
-      setSubId(generatedId);
       setStep("success");
     } else {
       setStep("payment");
@@ -164,8 +250,6 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
   };
 
   const handleSimulatePayment = () => {
-    const generatedId = "SUB-PSX-" + Math.floor(100000 + Math.random() * 900000);
-    setSubId(generatedId);
     setStep("success");
   };
 
@@ -181,7 +265,7 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-extrabold text-slate-900 dark:text-white">
-                {step === "success" ? "Subscription Activated!" : "Choose Your Protection Plan & Activation"}
+                {step === "success" ? "Subscription & Escrow Pass Activated!" : "Choose Your Protection Plan & Business Onboarding"}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 RBI Nodal Escrow Integrated • 100% Tax Deductible B2B Invoice
@@ -310,13 +394,29 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
 
               {/* Company & GST Verification Form */}
               <form onSubmit={handleProceedToPayment} className="space-y-4">
-                <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider">
-                  Business Details for Tax Invoice & Activation
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider">
+                    Business Details for KYC & Tax Invoice
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={handleFillDemo}
+                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
+                  >
+                    <Sparkles className="w-3 h-3" /> Auto-fill Sample Data
+                  </button>
+                </div>
+
+                {errorMsg && (
+                  <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{errorMsg}</span>
+                  </div>
+                )}
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Registered Firm / Company Name</label>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Registered Firm / Company Name *</label>
                     <input
                       type="text"
                       required
@@ -329,20 +429,40 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
 
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">GSTIN (for 18% Input Tax Credit)</label>
-                    <input
-                      type="text"
-                      required
-                      value={gstin}
-                      onChange={(e) => setGstin(e.target.value.toUpperCase())}
-                      placeholder="E.g., 07AAAAA1111A1ZA"
-                      className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:border-blue-500 focus:outline-none"
-                    />
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={gstin}
+                        onChange={(e) => setGstin(e.target.value.toUpperCase())}
+                        placeholder="E.g., 07AAAAA1111A1ZA"
+                        className="flex-1 px-4 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:border-blue-500 focus:outline-none uppercase"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleVerifyGst}
+                        disabled={isVerifyingGst || !gstin}
+                        className="px-3 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 text-xs font-bold cursor-pointer disabled:opacity-50"
+                      >
+                        {isVerifyingGst ? "..." : "Verify"}
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Official Email ID</label>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Contact Person Name</label>
+                    <input
+                      type="text"
+                      value={contactPerson}
+                      onChange={(e) => setContactPerson(e.target.value)}
+                      placeholder="E.g., Amit Rawat"
+                      className="w-full px-4 py-2.5 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:border-blue-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Official Business Email *</label>
                     <input
                       type="email"
                       required
@@ -354,7 +474,7 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Phone (for SMS & WhatsApp Alerts)</label>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Mobile (For Alerts) *</label>
                     <input
                       type="tel"
                       required
@@ -389,7 +509,7 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
                   type="submit"
                   className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition-all cursor-pointer"
                 >
-                  <span>{currentPlan.priceMonthly === 0 ? "Activate Free Buyer Pass Now" : "Proceed to Secure Payment Gateway"}</span>
+                  <span>{currentPlan.priceMonthly === 0 ? "Complete Verification & Activate Free Buyer Pass" : "Proceed to Secure Payment Gateway"}</span>
                   <ArrowRight className="w-4 h-4" />
                 </button>
               </form>
@@ -404,7 +524,7 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
                   256-Bit SSL Escrow Gateway
                 </span>
                 <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-2">
-                  Pay ₹{totalPrice.toLocaleString("en-IN")} via Razorpay Gateway
+                  Pay ₹{totalPrice.toLocaleString("en-IN")} via Escrow Gate
                 </h3>
                 <p className="text-xs text-slate-500 dark:text-slate-400">
                   Plan: <strong>{currentPlan.name}</strong> • Bill to: <strong>{companyName}</strong>
@@ -544,13 +664,13 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
 
               <div className="space-y-2">
                 <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-mono font-bold">
-                  TRANSACTION CONFIRMED
+                  PASS ACTIVATED & VERIFIED
                 </span>
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white">
                   Welcome to {currentPlan.name}!
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Your business account for <strong>{companyName}</strong> (GSTIN: {gstin}) is now active with full escrow protection.
+                  Your business account for <strong>{companyName}</strong> (GSTIN: {gstin || "Verified"}) is now active with full escrow protection.
                 </p>
               </div>
 
@@ -566,7 +686,7 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
                 <div className="flex justify-between">
                   <span className="text-slate-500">GST Invoice:</span>
                   <span className="text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1 cursor-pointer">
-                    <Download className="w-3 h-3" /> Download Invoice
+                    <Download className="w-3 h-3" /> Download Tax Invoice
                   </span>
                 </div>
               </div>

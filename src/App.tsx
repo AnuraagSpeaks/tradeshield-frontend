@@ -1,32 +1,62 @@
-import React, { useState } from 'react';
-import { Navbar } from './components/Navbar';
-import { Hero } from './components/Hero';
-import { TrustTicker } from './components/TrustTicker';
-import { HowItWorks } from './components/HowItWorks';
-import { FeatureGrid } from './components/FeatureGrid';
-import { PricingSection } from './components/PricingSection';
-import { Testimonials } from './components/Testimonials';
-import { FAQSection } from './components/FAQSection';
-import { KnowledgeHub } from './components/KnowledgeHub';
-import { AboutSection } from './components/AboutSection';
-import { ContactSection } from './components/ContactSection';
-import { Footer } from './components/Footer';
-import { TradeDashboard } from './components/TradeDashboard';
-import { LegalModal, LegalDocType } from './components/LegalModal';
+import React, { useState } from "react";
+import { AuthProvider, useAuth } from "./context/AuthContext";
+import { Navbar } from "./components/Navbar";
+import { Hero } from "./components/Hero";
+import { TrustTicker } from "./components/TrustTicker";
+import { HowItWorks } from "./components/HowItWorks";
+import { FeatureGrid } from "./components/FeatureGrid";
+import { PricingSection } from "./components/PricingSection";
+import { Testimonials } from "./components/Testimonials";
+import { FAQSection } from "./components/FAQSection";
+import { KnowledgeHub } from "./components/KnowledgeHub";
+import { AboutSection } from "./components/AboutSection";
+import { ContactSection } from "./components/ContactSection";
+import { Footer } from "./components/Footer";
+import { TradeDashboard } from "./components/TradeDashboard";
+import { LegalModal, LegalDocType } from "./components/LegalModal";
+import { AuthOnboardingModal } from "./components/AuthOnboardingModal";
 
-export const App: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'landing' | 'dashboard'>('landing');
+const AppContent: React.FC = () => {
+  const { user, isAuthenticated } = useAuth();
+  const [currentView, setCurrentView] = useState<"landing" | "dashboard">("landing");
   const [legalModalOpen, setLegalModalOpen] = useState<boolean>(false);
-  const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType>('terms');
+  const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType>("terms");
+
+  // Auth & Onboarding Modal
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [authRole, setAuthRole] = useState<"buyer" | "supplier">("buyer");
+  const [authMode, setAuthMode] = useState<"register" | "login">("register");
 
   const openLegalDoc = (doc: LegalDocType) => {
     setActiveLegalDoc(doc);
     setLegalModalOpen(true);
   };
 
-  const handleRoleSelect = () => {
-    setCurrentView('dashboard');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleRoleSelect = (role: "buyer" | "supplier" = "buyer") => {
+    if (isAuthenticated && user) {
+      setCurrentView("dashboard");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      setAuthRole(role);
+      setAuthMode("register");
+      setAuthModalOpen(true);
+    }
+  };
+
+  const handleOpenDashboardDirect = () => {
+    if (isAuthenticated && user) {
+      setCurrentView("dashboard");
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      setAuthRole("buyer");
+      setAuthMode("register");
+      setAuthModalOpen(true);
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    setCurrentView("dashboard");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   return (
@@ -39,16 +69,13 @@ export const App: React.FC = () => {
       />
 
       <main className="flex-1">
-        {currentView === 'landing' ? (
+        {currentView === "landing" ? (
           <>
             <Hero
               onOpenRole={handleRoleSelect}
-              onOpenDashboard={() => {
-                setCurrentView('dashboard');
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
+              onOpenDashboard={handleOpenDashboardDirect}
               onScrollToCalc={() => {
-                document.getElementById('pricing')?.scrollIntoView({ behavior: 'smooth' });
+                document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" });
               }}
             />
             <TrustTicker />
@@ -70,7 +97,7 @@ export const App: React.FC = () => {
         onOpenLegal={openLegalDoc}
         onNavigate={(view) => {
           setCurrentView(view);
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+          window.scrollTo({ top: 0, behavior: "smooth" });
         }}
       />
 
@@ -80,7 +107,23 @@ export const App: React.FC = () => {
         onClose={() => setLegalModalOpen(false)}
         onSelectDoc={(doc) => setActiveLegalDoc(doc)}
       />
+
+      <AuthOnboardingModal
+        isOpen={authModalOpen}
+        initialRole={authRole}
+        initialMode={authMode}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={handleAuthSuccess}
+      />
     </div>
+  );
+};
+
+export const App: React.FC = () => {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 };
 
