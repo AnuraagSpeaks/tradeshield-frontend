@@ -23,17 +23,23 @@ import {
   Landmark, 
   Truck, 
   FileCheck,
-  X
+  X,
+  UserCheck,
+  ArrowLeftRight,
+  LogOut
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 
-export const TradeDashboard: React.FC = () => {
+interface TradeDashboardProps {
+  onOpenAuth?: (role: "buyer" | "supplier", mode: "login" | "register") => void;
+}
+
+export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) => {
   const { user, logout } = useAuth();
-  // Active Persona / Role
-  const [role, setRole] = useState<"BUYER" | "SUPPLIER">(
-    user?.role === "supplier" ? "SUPPLIER" : "BUYER"
-  );
+  
+  // Strict Role-Based Access: Role is strictly derived from verified authentication credentials
+  const role: "BUYER" | "SUPPLIER" = user?.role === "supplier" ? "SUPPLIER" : "BUYER";
 
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [summary, setSummary] = useState<EscrowSummary | null>(null);
@@ -192,40 +198,33 @@ export const TradeDashboard: React.FC = () => {
           </p>
         </div>
 
-        {/* Role Toggle Switcher */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-100 dark:bg-slate-950 p-2 rounded-2xl border border-slate-200 dark:border-slate-800">
-          <span className="text-xs font-mono font-bold text-slate-600 dark:text-slate-400 px-2">SWITCH ROLE:</span>
-          <div className="flex items-center gap-1.5 w-full sm:w-auto">
-            <button
-              onClick={() => {
-                setRole("BUYER");
-                setActiveTab("contracts");
-              }}
-              className={"flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer " + (
-                role === "BUYER"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 shadow-md"
-                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent"
-              )}
-            >
-              <Briefcase className="w-3.5 h-3.5" />
-              <span>Buyer (Buyer 1)</span>
-            </button>
-
-            <button
-              onClick={() => {
-                setRole("SUPPLIER");
-                setActiveTab("contracts");
-              }}
-              className={"flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer " + (
-                role === "SUPPLIER"
-                  ? "bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 shadow-md"
-                  : "bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-transparent"
-              )}
-            >
-              <Building2 className="w-3.5 h-3.5" />
-              <span>Supplier (Rajesh Exports)</span>
-            </button>
+        {/* Authenticated Workspace & Access Control Card */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-100 dark:bg-slate-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
+          <div className="flex items-center gap-2">
+            <span className={"px-3.5 py-2 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 shadow-sm " + (
+              role === "BUYER"
+                ? "bg-blue-600 text-white dark:bg-blue-500 dark:text-slate-950"
+                : "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-950"
+            )}>
+              {role === "BUYER" ? <Briefcase className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+              <span>{role === "BUYER" ? "BUYER WORKSPACE" : "SUPPLIER WORKSPACE"}</span>
+            </span>
           </div>
+
+          <button
+            onClick={() => {
+              if (onOpenAuth) {
+                onOpenAuth(role === "BUYER" ? "supplier" : "buyer", "login");
+              } else {
+                logout();
+              }
+            }}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-800 transition-all cursor-pointer shadow-sm hover:border-slate-300 dark:hover:border-slate-700"
+            title="Authenticate as a different organization or persona"
+          >
+            <ArrowLeftRight className="w-3.5 h-3.5 text-blue-600 dark:text-emerald-400" />
+            <span>Switch Account</span>
+          </button>
         </div>
       </div>
 

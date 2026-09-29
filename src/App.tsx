@@ -34,6 +34,12 @@ const AppContent: React.FC = () => {
 
   const handleRoleSelect = (role: "buyer" | "supplier" = "buyer") => {
     if (isAuthenticated && user) {
+      if (user.role !== role) {
+        setAuthRole(role);
+        setAuthMode("login");
+        setAuthModalOpen(true);
+        return;
+      }
       setCurrentView("dashboard");
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
@@ -89,7 +95,13 @@ const AppContent: React.FC = () => {
             <ContactSection />
           </>
         ) : (
-          <TradeDashboard />
+          <TradeDashboard
+            onOpenAuth={(role, mode) => {
+              setAuthRole(role);
+              setAuthMode(mode);
+              setAuthModalOpen(true);
+            }}
+          />
         )}
       </main>
 
