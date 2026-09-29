@@ -30,6 +30,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
+import { DocumentViewerModal } from "./DocumentViewerModal";
 
 interface TradeDashboardProps {
   onOpenAuth?: (role: "buyer" | "supplier", mode: "login" | "register") => void;
@@ -60,6 +61,10 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   const [lrNumber, setLrNumber] = useState("LR-VT-2026-98124");
   const [proofUrl, setProofUrl] = useState("https://docs.tradeshield.in/proofs/dispatch_lr_98124.pdf");
   const [dispatchNotes, setDispatchNotes] = useState("Consignment dispatched with 5,000 units inspected and sealed.");
+
+  // Document Viewer Modal State
+  const [viewDocModalOpen, setViewDocModalOpen] = useState(false);
+  const [viewDocMilestone, setViewDocMilestone] = useState<Milestone | null>(null);
 
   // Dispute Form State
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
@@ -418,15 +423,16 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
                         <div className="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="font-bold text-slate-700 dark:text-slate-300">Uploaded Delivery Proof (LR / Inspection):</span>
-                            <a
-                              href={m.deliverable_proof_url}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="text-blue-600 dark:text-blue-400 underline font-mono flex items-center gap-1"
+                            <button
+                              onClick={() => {
+                                setViewDocMilestone(m);
+                                setViewDocModalOpen(true);
+                              }}
+                              className="text-blue-600 dark:text-blue-400 font-bold hover:underline font-mono flex items-center gap-1 cursor-pointer"
                             >
                               <span>View Document</span>
                               <ArrowUpRight className="w-3 h-3" />
-                            </a>
+                            </button>
                           </div>
                           {m.inspection_notes && (
                             <p className="text-slate-600 dark:text-slate-400 text-[11px]">{m.inspection_notes}</p>
@@ -754,6 +760,14 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           </div>
         </div>
       )}
+
+      {/* Document Viewer Modal */}
+      <DocumentViewerModal
+        isOpen={viewDocModalOpen}
+        milestone={viewDocMilestone}
+        contract={selectedContract}
+        onClose={() => setViewDocModalOpen(false)}
+      />
 
     </div>
   );
