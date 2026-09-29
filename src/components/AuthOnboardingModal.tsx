@@ -145,10 +145,18 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleDemoSelect = (demoRole: "buyer" | "supplier" | "admin") => {
-    demoLogin(demoRole);
-    onSuccess();
-    onClose();
+  const handleQuickFillCredentials = (targetRole: "buyer" | "supplier" | "admin") => {
+    if (targetRole === "buyer") {
+      setEmail("procurement@apexauto.in");
+      setPassword("Apex@Shield2026");
+    } else if (targetRole === "supplier") {
+      setEmail("sales@bharatcastings.com");
+      setPassword("Bharat@Shield2026");
+    } else {
+      setEmail("court@tradeshield.in");
+      setPassword("Arbiter@Shield2026");
+    }
+    setErrorMsg("");
   };
 
   const handleFillDemoData = (targetRole: "buyer" | "supplier") => {
@@ -564,22 +572,63 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
               ) : (
                 /* SIGN IN FORM */
                 <form onSubmit={handleLoginSubmit} className="space-y-4">
+                  {/* Quick-Fill Test Credentials Banner */}
+                  <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-slate-950 border border-blue-200 dark:border-blue-500/20 space-y-2.5">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                      <span className="flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-emerald-400" />
+                        <span>Quick-Fill Test Credentials:</span>
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">1-Click Populate</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => handleQuickFillCredentials("buyer")}
+                        className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-left transition-all cursor-pointer group shadow-sm hover:shadow"
+                      >
+                        <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 font-mono">BUYER (APEX AUTO)</div>
+                        <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">procurement@apexauto.in</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleQuickFillCredentials("supplier")}
+                        className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500 text-left transition-all cursor-pointer group shadow-sm hover:shadow"
+                      >
+                        <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">SUPPLIER (BHARAT)</div>
+                        <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">sales@bharatcastings.com</div>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleQuickFillCredentials("admin")}
+                        className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-left transition-all cursor-pointer group shadow-sm hover:shadow"
+                      >
+                        <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 font-mono">ARBITER COURT</div>
+                        <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">court@tradeshield.in</div>
+                      </button>
+                    </div>
+                  </div>
+
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Registered Business Email</label>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Registered Business Email *</label>
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="E.g., procurement@apexauto.in"
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none font-mono"
                     />
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Password / Security PIN</label>
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Password / Security PIN *</label>
                     <input
                       type="password"
+                      required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
@@ -592,37 +641,9 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                     disabled={loading}
                     className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50"
                   >
-                    <span>{loading ? "Authenticating..." : "Sign In to Escrow Portal"}</span>
+                    <span>{loading ? "Authenticating Session & Verifying RBAC..." : "Authenticate & Sign In to Escrow Portal"}</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
-
-                  {/* Pre-seeded Demo Switchers */}
-                  <div className="pt-4 border-t border-slate-200 dark:border-slate-800 space-y-2 text-center">
-                    <span className="text-xs text-slate-500 dark:text-slate-400">Or quickly test as pre-seeded entity:</span>
-                    <div className="grid grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleDemoSelect("buyer")}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold cursor-pointer"
-                      >
-                        Apex Buyer
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDemoSelect("supplier")}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold cursor-pointer"
-                      >
-                        Bharat Supplier
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleDemoSelect("admin")}
-                        className="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-[11px] font-bold cursor-pointer"
-                      >
-                        Legal Arbiter
-                      </button>
-                    </div>
-                  </div>
                 </form>
               )}
             </>
