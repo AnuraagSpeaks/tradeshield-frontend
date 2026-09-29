@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   X,
   ShieldCheck,
@@ -60,6 +60,25 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
 
   // Registered Success Screen
   const [activatedPass, setActivatedPass] = useState<{ passId: string; company: string; role: string } | null>(null);
+
+  // Synchronize state when modal is opened or target role/mode changes
+  useEffect(() => {
+    if (isOpen) {
+      setMode(initialMode);
+      setRole(initialRole);
+      setErrorMsg("");
+      setActivatedPass(null);
+      if (initialMode === "login") {
+        if (initialRole === "supplier") {
+          setEmail("sales@bharatcastings.com");
+          setPassword("Bharat@Shield2026");
+        } else {
+          setEmail("procurement@apexauto.in");
+          setPassword("Apex@Shield2026");
+        }
+      }
+    }
+  }, [isOpen, initialMode, initialRole]);
 
   if (!isOpen) return null;
 
