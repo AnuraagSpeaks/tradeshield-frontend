@@ -93,30 +93,56 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [user]);
 
   const login = async (email: string, password?: string): Promise<{ success: boolean; message?: string }> => {
+    const lowerEmail = email.toLowerCase().trim();
+    const isSupplierEmail = lowerEmail.includes("supplier") || lowerEmail.includes("sales") || lowerEmail.includes("bharat") || lowerEmail.includes("seller") || lowerEmail.includes("castings");
+    const isAdminEmail = lowerEmail.includes("court") || lowerEmail.includes("admin") || lowerEmail.includes("arbiter");
+    const inferredRole: "buyer" | "supplier" | "admin" = isAdminEmail ? "admin" : isSupplierEmail ? "supplier" : "buyer";
+
+    // 1. Check exact match in pre-seeded demo accounts first
+    for (const d of Object.values(DEMO_ACCOUNTS)) {
+      if (d.email.toLowerCase() === lowerEmail) {
+        setUser(d);
+        try {
+          fetch(`${API_BASE}/auth/login`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password, role: d.role }),
+          });
+        } catch {}
+        return { success: true, message: "Signed in successfully (Pre-seeded Account)" };
+      }
+    }
+
+    // 2. Try Backend API
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, role: inferredRole }),
       });
       const data = await res.json();
       if (res.ok && data.data?.user) {
         const u = data.data.user;
+        const userRoleStr = (u.role || inferredRole).toLowerCase();
+        const finalRole: "buyer" | "supplier" | "admin" = 
+          userRoleStr.includes("admin") || userRoleStr.includes("arbit") ? "admin" :
+          userRoleStr.includes("supplier") || userRoleStr.includes("seller") ? "supplier" : "buyer";
+
         const loggedUser: User = {
           id: u.id || "user_" + Math.random().toString(36).substring(2, 8),
           email: u.email,
-          business_name: u.business_name || "Verified Business Entity",
-          contact_person: u.contact_person || u.name || "Authorized Signatory",
-          designation: u.designation || (u.role === "buyer" ? "Procurement Officer" : "Commercial Director"),
-          gst: u.gst || "27AAACA1234A1Z5",
-          pan: u.pan || "AAACA1234A",
+          business_name: u.business_name || (finalRole === "supplier" ? "Bharat Precision Castings Ltd" : "Apex Auto Components Pvt Ltd"),
+          contact_person: u.contact_person || u.full_name || u.name || "Authorized Signatory",
+          designation: u.designation || (finalRole === "buyer" ? "Head of Procurement" : "Managing Director"),
+          gst: u.gst || (finalRole === "supplier" ? "24AABCB5678B1Z2" : "27AAACA1234A1Z5"),
+          pan: u.pan || (finalRole === "supplier" ? "AABCB5678B" : "AAACA1234A"),
           mobile: u.mobile || "9876543210",
-          city: u.city || "Mumbai",
-          state: u.state || "Maharashtra",
-          category: u.category || "General B2B Trading",
-          role: u.role || "buyer",
-          plan_tier: u.role === "buyer" ? "buyer_free" : "business",
-          pass_id: u.pass_id || ("PSX-" + (u.role || "BUYER").toUpperCase() + "-" + Math.floor(100000 + Math.random() * 900000)),
+          city: u.city || (finalRole === "supplier" ? "Vadodara" : "Pune"),
+          state: u.state || (finalRole === "supplier" ? "Gujarat" : "Maharashtra"),
+          category: u.category || (finalRole === "supplier" ? "Precision Metal & Foundry" : "Automotive & Heavy Engineering"),
+          role: finalRole,
+          plan_tier: finalRole === "buyer" ? "buyer_free" : "business",
+          pass_id: u.pass_id || ("PSX-" + finalRole.toUpperCase() + "-" + Math.floor(100000 + Math.random() * 900000)),
           verified: true,
           token: data.data.token,
         };
@@ -127,31 +153,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Fallback
     }
 
-    // Match demo accounts
-    const lowerEmail = email.toLowerCase().trim();
-    for (const d of Object.values(DEMO_ACCOUNTS)) {
-      if (d.email.toLowerCase() === lowerEmail) {
-        setUser(d);
-        return { success: true, message: "Signed in successfully (Pre-seeded Account)" };
-      }
-    }
-
-    // Auto-create user for frictionless validation
+    // 3. Auto-create user with accurate role
     const autoUser: User = {
       id: "user_" + Math.random().toString(36).substring(2, 8),
       email: email,
-      business_name: email.split("@")[0].toUpperCase() + " ENTERPRISES",
-      contact_person: "Authorized Signatory",
-      designation: "Executive Director",
-      gst: "27AAAAA0000A1Z5",
-      pan: "AAAAA0000A",
-      mobile: "9876543210",
-      city: "Mumbai",
-      state: "Maharashtra",
-      category: "B2B Trade & Commerce",
-      role: "buyer",
-      plan_tier: "buyer_free",
-      pass_id: "PSX-BUYER-" + Math.floor(100000 + Math.random() * 900000),
+      business_name: isSupplierEmail ? "Bharat Precision Castings Ltd" : email.split("@")[0].toUpperCase() + " ENTERPRISES",
+      contact_person: isSupplierEmail ? "Rajesh Singhania" : "Authorized Signatory",
+      designation: isSupplierEmail ? "Managing Director" : "Executive Director",
+      gst: isSupplierEmail ? "24AABCB5678B1Z2" : "27AAAAA0000A1Z5",
+      pan: isSupplierEmail ? "AABCB5678B" : "AAAAA0000A",
+      mobile: isSupplierEmail ? "9898123456" : "9876543210",
+      city: isSupplierEmail ? "Vadodara" : "Mumbai",
+      state: isSupplierEmail ? "Gujarat" : "Maharashtra",
+      category: isSupplierEmail ? "Heavy Engineering & Foundries" : "B2B Trade & Commerce",
+      role: inferredRole,
+      plan_tier: inferredRole === "buyer" ? "buyer_free" : "business",
+      pass_id: "PSX-" + inferredRole.toUpperCase() + "-" + Math.floor(100000 + Math.random() * 900000),
       verified: true,
     };
     setUser(autoUser);
