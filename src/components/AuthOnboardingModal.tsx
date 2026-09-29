@@ -10,19 +10,20 @@ import {
   Lock,
   ArrowRight,
   Sparkles,
-  FileCheck2,
   Check,
   AlertCircle,
-  HelpCircle,
-  QrCode
+  KeyRound,
+  RotateCcw,
+  Loader2,
+  ArrowLeft
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
-import { verifyGSTIN } from "../api/client";
+import { verifyGSTIN, sendEmailOTP, verifyEmailOTP, resetPasswordAPI } from "../api/client";
 
 interface AuthModalProps {
   isOpen: boolean;
   initialRole?: "buyer" | "supplier";
-  initialMode?: "register" | "login";
+  initialMode?: "register" | "login" | "forgot_password";
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -34,11 +35,11 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
   onClose,
   onSuccess,
 }) => {
-  const { login, register, demoLogin } = useAuth();
-  const [mode, setMode] = useState<"register" | "login">("login");
+  const { login, register, updateUser } = useAuth();
+  const [mode, setMode] = useState<"login" | "register" | "otp_verify" | "forgot_password" | "reset_password">("login");
   const [role, setRole] = useState<"buyer" | "supplier">(initialRole);
 
-  // Form Fields
+  // Registration Form Fields
   const [businessName, setBusinessName] = useState("");
   const [contactPerson, setContactPerson] = useState("");
   const [designation, setDesignation] = useState("Director of Procurement");
@@ -52,14 +53,33 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
   const [password, setPassword] = useState("");
   const [agreedToTerms, setAgreedToTerms] = useState(true);
 
+  // OTP & Password Recovery State
+  const [otpCode, setOtpCode] = useState("");
+  const [otpPurpose, setOtpPurpose] = useState<"register" | "forgot_password">("register");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   // Verification state
   const [isGstVerifying, setIsGstVerifying] = useState(false);
   const [gstVerifiedData, setGstVerifiedData] = useState<{ valid: boolean; legal_name: string; trust_score: number } | null>(null);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [infoMsg, setInfoMsg] = useState("");
 
   // Registered Success Screen
   const [activatedPass, setActivatedPass] = useState<{ passId: string; company: string; role: string } | null>(null);
+
+  // Resend Countdown Timer
+  useEffect(() => {
+    let timer: any;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => {
+        setResendCooldown((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
 
   // Synchronize state when modal is opened or target role/mode changes
   useEffect(() => {
@@ -68,6 +88,8 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
       setMode(targetMode);
       setRole(initialRole);
       setErrorMsg("");
+      setInfoMsg("");
+      setOtpCode("");
       setActivatedPass(null);
       if (targetMode === "login") {
         if (initialRole === "supplier") {
@@ -106,7 +128,8 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
     }
   };
 
-  const handleRegisterSubmit = async (e: React.FormEvent) => {
+  // Step 1 of Registration: Validate and Send Email OTP
+  const handleInitiateRegistration = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!agreedToTerms) {
       setErrorMsg("Please accept the PayShieldX Nodal Escrow Agreement to proceed.");
@@ -116,15 +139,52 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
       setErrorMsg("Please fill in all mandatory business identity fields.");
       return;
     }
+    if (!password || password.length < 6) {
+      setErrorMsg("Please provide a password of at least 6 characters.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg("");
+    setInfoMsg("");
+
+    const otpRes = await sendEmailOTP(email.trim().toLowerCase(), "register");
+    setLoading(false);
+
+    if (otpRes.success) {
+      setOtpPurpose("register");
+      setResendCooldown(45);
+      setMode("otp_verify");
+      setInfoMsg(`A 6-digit verification code has been dispatched to ${email}.`);
+    } else {
+      setErrorMsg(otpRes.message || "Failed to dispatch verification code. Please check your email.");
+    }
+  };
+
+  // Step 2 of Registration: Verify OTP and Issue Escrow Pass
+  const handleVerifyRegistrationOTP = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.trim().length < 6) {
+      setErrorMsg("Please enter the 6-digit verification code sent to your email.");
+      return;
+    }
 
     setLoading(true);
     setErrorMsg("");
 
+    const verifyRes = await verifyEmailOTP(email.trim().toLowerCase(), otpCode.trim(), "register");
+    if (!verifyRes.success) {
+      setLoading(false);
+      setErrorMsg(verifyRes.message || "Invalid or expired verification code.");
+      return;
+    }
+
+    // Register user account
     const res = await register({
       business_name: businessName,
       contact_person: contactPerson || "Authorized Signatory",
       designation: designation,
-      email: email,
+      email: email.trim().toLowerCase(),
       mobile: phone,
       gst: gstin || "27AAAAA1111A1ZA",
       pan: pan || (gstin ? gstin.substring(2, 12) : "AAAAA1111A"),
@@ -143,7 +203,21 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
         role: role,
       });
     } else {
-      setErrorMsg(res.message || "Failed to register. Please try again.");
+      setErrorMsg(res.message || "Failed to finalize registration.");
+    }
+  };
+
+  const handleResendOTP = async () => {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    setErrorMsg("");
+    const res = await sendEmailOTP(email.trim().toLowerCase(), otpPurpose);
+    setLoading(false);
+    if (res.success) {
+      setResendCooldown(45);
+      setInfoMsg("A new 6-digit verification code was sent to your email.");
+    } else {
+      setErrorMsg("Failed to resend code. Please try again in a moment.");
     }
   };
 
@@ -162,6 +236,63 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
       onClose();
     } else {
       setErrorMsg(res.message || "Invalid credentials.");
+    }
+  };
+
+  // Forgot Password: Step 1 (Request PIN)
+  const handleInitiateForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !email.includes("@")) {
+      setErrorMsg("Please enter a valid registered corporate email.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg("");
+    const res = await sendEmailOTP(email.trim().toLowerCase(), "forgot_password");
+    setLoading(false);
+
+    if (res.success) {
+      setOtpPurpose("forgot_password");
+      setResendCooldown(45);
+      setMode("reset_password");
+      setInfoMsg(`A 6-digit password reset PIN was sent to ${email}.`);
+    } else {
+      setErrorMsg(res.message || "Failed to dispatch reset code. Please check email address.");
+    }
+  };
+
+  // Forgot Password: Step 2 (Verify PIN & Update Password)
+  const handleExecutePasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpCode || otpCode.trim().length < 6) {
+      setErrorMsg("Please enter the 6-digit reset PIN.");
+      return;
+    }
+    if (!newPassword || newPassword.length < 6) {
+      setErrorMsg("New password must be at least 6 characters.");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setErrorMsg("New password and confirm password do not match.");
+      return;
+    }
+
+    setLoading(true);
+    setErrorMsg("");
+
+    const res = await resetPasswordAPI(email.trim().toLowerCase(), otpCode.trim(), newPassword);
+    setLoading(false);
+
+    if (res.success) {
+      if (res.user) {
+        updateUser(res.user);
+      }
+      alert("Password updated successfully! Signing you into your Escrow Dashboard.");
+      onSuccess();
+      onClose();
+    } else {
+      setErrorMsg(res.message || "Invalid reset PIN or expired session.");
     }
   };
 
@@ -192,6 +323,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
       setCity("New Delhi");
       setState("Delhi");
       setCategory("Textiles, Fabrics & Garments");
+      setPassword("Rawat@Shield2026");
     } else {
       setBusinessName("Bharat Precision Castings Ltd");
       setContactPerson("Rajesh Singhania");
@@ -203,6 +335,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
       setCity("Vadodara");
       setState("Gujarat");
       setCategory("Heavy Engineering & Metal Castings");
+      setPassword("Bharat@Shield2026");
     }
   };
 
@@ -214,7 +347,11 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
         <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950/80">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shrink-0">
-              <ShieldCheck className="w-6 h-6" />
+              {mode === "forgot_password" || mode === "reset_password" ? (
+                <KeyRound className="w-6 h-6 text-amber-600 dark:text-amber-400" />
+              ) : (
+                <ShieldCheck className="w-6 h-6" />
+              )}
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
@@ -222,7 +359,13 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                   ? "Identity Verified & Pass Issued!"
                   : mode === "login"
                   ? "Sign In to Escrow Portal"
-                  : "B2B Business Identity & Escrow Pass"}
+                  : mode === "register"
+                  ? "B2B Business Identity & Escrow Pass"
+                  : mode === "otp_verify"
+                  ? "Verify Official Business Email"
+                  : mode === "forgot_password"
+                  ? "Password Recovery"
+                  : "Set New Password / PIN"}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 RBI Nodal Escrow Protocol • Instant Dual-Party Verification
@@ -240,7 +383,22 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
         {/* Modal Body */}
         <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-800 dark:text-slate-200 text-xs sm:text-sm">
           
-          {/* SUCCESS SCREEN */}
+          {/* Alerts Banner */}
+          {errorMsg && (
+            <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2 animate-in fade-in">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {infoMsg && (
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in">
+              <Check className="w-4 h-4 shrink-0" />
+              <span>{infoMsg}</span>
+            </div>
+          )}
+
+          {/* SUCCESS ACTIVATION SCREEN */}
           {activatedPass ? (
             <div className="text-center py-4 space-y-6 animate-in fade-in zoom-in-95 duration-200">
               <div className="w-16 h-16 rounded-3xl bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 mx-auto flex items-center justify-center shadow-lg shadow-emerald-500/20">
@@ -249,13 +407,13 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
 
               <div className="space-y-1">
                 <span className="px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/30 text-emerald-700 dark:text-emerald-400 text-xs font-mono font-bold">
-                  KYC COMPLIANT & ACTIVATED
+                  EMAIL & GSTIN KYC COMPLIANT
                 </span>
                 <h3 className="text-2xl font-black text-slate-900 dark:text-white mt-2">
                   Welcome, {activatedPass.company}!
                 </h3>
                 <p className="text-xs text-slate-600 dark:text-slate-400">
-                  Your business profile is now active on the national B2B escrow network with dual-approval protection.
+                  Your business profile and official signatory email are verified on the national escrow network.
                 </p>
               </div>
 
@@ -299,15 +457,8 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
               </button>
             </div>
           ) : mode === "login" ? (
-            /* DEFAULT PRIORITY: SIGN IN VIEW */
+            /* 1. SIGN IN VIEW */
             <div className="space-y-6">
-              {errorMsg && (
-                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
               {/* Quick-Fill Test Credentials Banner */}
               <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-slate-950 border border-blue-200 dark:border-blue-500/20 space-y-2.5">
                 <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
@@ -363,7 +514,20 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Password / Security PIN *</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Password / Security PIN *</label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setMode("forgot_password");
+                        setErrorMsg("");
+                        setInfoMsg("");
+                      }}
+                      className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
                   <input
                     type="password"
                     required
@@ -379,8 +543,17 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                   disabled={loading}
                   className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  <span>{loading ? "Authenticating Session & Verifying RBAC..." : "Authenticate & Sign In to Escrow Portal"}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Authenticating Session...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Authenticate & Sign In to Escrow Portal</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
               </form>
 
@@ -388,7 +561,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
               <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
                 <div>
                   <div className="font-bold text-slate-900 dark:text-white text-xs">New business organization?</div>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Activate your Verified Escrow Pass & GSTIN validation.</p>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Activate your Verified Escrow Pass with Email OTP.</p>
                 </div>
 
                 <button
@@ -396,6 +569,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                   onClick={() => {
                     setMode("register");
                     setErrorMsg("");
+                    setInfoMsg("");
                   }}
                   className="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-700 font-bold text-xs transition-all cursor-pointer shrink-0 shadow-sm"
                 >
@@ -403,8 +577,8 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                 </button>
               </div>
             </div>
-          ) : (
-            /* REGISTRATION VIEW */
+          ) : mode === "register" ? (
+            /* 2. REGISTRATION FORM VIEW */
             <div className="space-y-6">
               {/* Back to Login Header Banner */}
               <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/70 dark:bg-slate-950 border border-blue-200 dark:border-blue-500/20">
@@ -414,6 +588,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                   onClick={() => {
                     setMode("login");
                     setErrorMsg("");
+                    setInfoMsg("");
                   }}
                   className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                 >
@@ -421,14 +596,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                 </button>
               </div>
 
-              {errorMsg && (
-                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{errorMsg}</span>
-                </div>
-              )}
-
-              <form onSubmit={handleRegisterSubmit} className="space-y-5">
+              <form onSubmit={handleInitiateRegistration} className="space-y-5">
                 {/* Role Selector Card */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
@@ -593,10 +761,10 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                   </div>
                 </div>
 
-                {/* Authorized Signatory Details */}
+                {/* Signatory & Security Credentials */}
                 <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
-                    3. Key Contact & Escrow Signatory:
+                    3. Signatory & Security Credentials:
                   </label>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -634,12 +802,12 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
                         placeholder="E.g., procurement@company.in"
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none font-mono"
                       />
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Mobile (For OTP & Alerts) *</label>
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Mobile Number (For Alerts) *</label>
                       <input
                         type="tel"
                         required
@@ -650,6 +818,18 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                         className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Create Pass Password / PIN *</label>
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Minimum 6 characters"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                    />
                   </div>
                 </div>
 
@@ -673,16 +853,266 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                   disabled={loading}
                   className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  <span>{loading ? "Activating Digital Pass..." : role === "buyer" ? "Issue Free B2B Buyer Pass" : "Register Verified Supplier Account"}</span>
-                  <ArrowRight className="w-4 h-4" />
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Sending Email Verification Code...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Verify Email & Activate Escrow Pass</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
                 </button>
+              </form>
+            </div>
+          ) : mode === "otp_verify" ? (
+            /* 3. EMAIL OTP VERIFICATION VIEW */
+            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-150">
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 rounded-2xl bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center font-bold">
+                  <Mail className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Verify Your Corporate Email</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  We have dispatched a 6-digit verification code to <strong className="text-slate-900 dark:text-white font-mono">{email}</strong>.
+                </p>
+              </div>
+
+              <form onSubmit={handleVerifyRegistrationOTP} className="space-y-5 max-w-sm mx-auto">
+                <div className="space-y-2 text-center">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
+                    Enter 6-Digit Code
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="849201"
+                    className="w-full text-center tracking-[8px] font-mono text-2xl font-black py-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                {/* Quick Test Demo Autofill */}
+                <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-slate-950 border border-blue-200 dark:border-slate-800 text-center">
+                  <button
+                    type="button"
+                    onClick={() => setOtpCode("849201")}
+                    className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center justify-center gap-1 mx-auto cursor-pointer"
+                  >
+                    <Sparkles className="w-3 h-3" /> Auto-fill Demo Test Code (849201)
+                  </button>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading || otpCode.length < 6}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Verifying Identity...</span>
+                    </>
+                  ) : (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Confirm & Issue Escrow Pass</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="flex items-center justify-between text-xs pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setMode("register")}
+                    className="text-slate-500 hover:text-slate-900 dark:hover:text-white flex items-center gap-1 cursor-pointer"
+                  >
+                    <ArrowLeft className="w-3 h-3" /> Edit Email / Details
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={resendCooldown > 0 || loading}
+                    onClick={handleResendOTP}
+                    className="text-blue-600 dark:text-blue-400 font-bold hover:underline disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    {resendCooldown > 0 ? `Resend code in ${resendCooldown}s` : "Resend Code"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : mode === "forgot_password" ? (
+            /* 4. FORGOT PASSWORD VIEW */
+            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-150">
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center font-bold">
+                  <KeyRound className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Recover Password / Security PIN</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  Enter your registered official email address to receive a secure 6-digit password reset PIN.
+                </p>
+              </div>
+
+              <form onSubmit={handleInitiateForgotPassword} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Registered Business Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="E.g., procurement@apexauto.in"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-amber-500 focus:outline-none font-mono"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-600/20 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Dispatching Reset PIN...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Send 6-Digit Password Reset PIN</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+
+                <div className="text-center pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("login");
+                      setErrorMsg("");
+                      setInfoMsg("");
+                    }}
+                    className="text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                  >
+                    ← Remember password? Back to Sign In
+                  </button>
+                </div>
+              </form>
+            </div>
+          ) : (
+            /* 5. RESET PASSWORD EXECUTION VIEW */
+            <div className="space-y-6 animate-in fade-in zoom-in-95 duration-150">
+              <div className="text-center space-y-2">
+                <div className="w-12 h-12 rounded-2xl bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 mx-auto flex items-center justify-center font-bold">
+                  <Lock className="w-6 h-6" />
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">Create New Password / PIN</h3>
+                <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto">
+                  Enter the 6-digit PIN sent to <strong className="text-slate-900 dark:text-white font-mono">{email}</strong> and specify your new password.
+                </p>
+              </div>
+
+              <form onSubmit={handleExecutePasswordReset} className="space-y-4">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">6-Digit Reset PIN *</label>
+                    <button
+                      type="button"
+                      onClick={() => setOtpCode("849201")}
+                      className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                    >
+                      Demo PIN (849201)
+                    </button>
+                  </div>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, ""))}
+                    placeholder="E.g., 849201"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white font-mono tracking-widest focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">New Password / PIN *</label>
+                  <input
+                    type="password"
+                    required
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    placeholder="Minimum 6 characters"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Confirm New Password *</label>
+                  <input
+                    type="password"
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter new password"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-amber-500 focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-600/20 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Updating Credentials...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Update Password & Sign In</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="flex items-center justify-between text-xs pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMode("login");
+                      setErrorMsg("");
+                      setInfoMsg("");
+                    }}
+                    className="text-slate-500 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                  >
+                    ← Back to Sign In
+                  </button>
+
+                  <button
+                    type="button"
+                    disabled={resendCooldown > 0 || loading}
+                    onClick={handleResendOTP}
+                    className="text-amber-600 dark:text-amber-400 font-bold hover:underline disabled:opacity-50 cursor-pointer flex items-center gap-1"
+                  >
+                    <RotateCcw className="w-3 h-3" />
+                    {resendCooldown > 0 ? `Resend PIN in ${resendCooldown}s` : "Resend PIN"}
+                  </button>
+                </div>
               </form>
             </div>
           )}
 
         </div>
-
       </div>
     </div>
   );
 };
+
