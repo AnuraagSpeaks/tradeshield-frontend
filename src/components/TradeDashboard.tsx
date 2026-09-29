@@ -41,19 +41,30 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   
   // Strict Role-Based Access: Role is strictly derived from verified authentication credentials
   const userRoleStr = (user?.role || "").toLowerCase();
-  const isSupplier = 
-    userRoleStr === "supplier" || 
-    userRoleStr.includes("seller") || 
-    (user?.email || "").toLowerCase().includes("supplier") || 
-    (user?.email || "").toLowerCase().includes("sales") ||
-    (user?.email || "").toLowerCase().includes("bharat");
+  const isAdmin = 
+    userRoleStr === "admin" || 
+    userRoleStr.includes("arbit") || 
+    (user?.email || "").toLowerCase().includes("court") || 
+    (user?.email || "").toLowerCase().includes("admin") ||
+    (user?.email || "").toLowerCase().includes("arbiter");
 
-  const role: "BUYER" | "SUPPLIER" = isSupplier ? "SUPPLIER" : "BUYER";
+  const isSupplier = 
+    !isAdmin && (
+      userRoleStr === "supplier" || 
+      userRoleStr.includes("seller") || 
+      (user?.email || "").toLowerCase().includes("supplier") || 
+      (user?.email || "").toLowerCase().includes("sales") ||
+      (user?.email || "").toLowerCase().includes("bharat")
+    );
+
+  const role: "BUYER" | "SUPPLIER" | "ADMIN" = isAdmin ? "ADMIN" : isSupplier ? "SUPPLIER" : "BUYER";
 
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [summary, setSummary] = useState<EscrowSummary | null>(null);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [activeTab, setActiveTab] = useState<"contracts" | "new_deal" | "disputes" | "payouts" | "kyc">("contracts");
+  const [activeTab, setActiveTab] = useState<"contracts" | "new_deal" | "disputes" | "payouts" | "kyc">(
+    isAdmin ? "disputes" : "contracts"
+  );
   const [loading, setLoading] = useState<boolean>(true);
 
   // New Deal Form State (Buyer)
@@ -200,11 +211,17 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
-            {role === "BUYER" ? "Buyer Procurement Portal" : "Supplier Fulfillment & Payout Portal"}
+            {role === "ADMIN"
+              ? "Arbitration Court & Escrow Ledger Desk"
+              : role === "BUYER"
+              ? "Buyer Procurement Portal"
+              : "Supplier Fulfillment & Payout Portal"}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-mono">
             {user
-              ? `Logged in as ${user.business_name} (${user.city || "India"}) • GSTIN: ${user.gst} • Pass ID: ${user.pass_id || "PSX-ACTIVE"}`
+              ? `Logged in as ${user.business_name} (${user.city || "India"}) • Signatory: ${user.contact_person || "Authorized Signatory"} • GSTIN: ${user.gst} • Pass ID: ${user.pass_id || "PSX-ACTIVE"}`
+              : role === "ADMIN"
+              ? "Logged in as TradeShield Neutral Arbitration Panel (New Delhi) • Arbiter: Justice (Retd.) K. N. Verma"
               : role === "BUYER"
               ? "Logged in as Apex Auto Components Pvt Ltd (Pune) • GSTIN: 27AAACA1234A1Z5"
               : "Logged in as Bharat Precision Castings Ltd (Vadodara) • GSTIN: 24AAACB5678B1Z2"}
@@ -215,12 +232,14 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-100 dark:bg-slate-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
             <span className={"px-3.5 py-2 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 shadow-sm " + (
-              role === "BUYER"
+              role === "ADMIN"
+                ? "bg-purple-600 text-white dark:bg-purple-500 dark:text-slate-950"
+                : role === "BUYER"
                 ? "bg-blue-600 text-white dark:bg-blue-500 dark:text-slate-950"
                 : "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-950"
             )}>
-              {role === "BUYER" ? <Briefcase className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
-              <span>{role === "BUYER" ? "BUYER WORKSPACE" : "SUPPLIER WORKSPACE"}</span>
+              {role === "ADMIN" ? <ShieldCheck className="w-3.5 h-3.5" /> : role === "BUYER" ? <Briefcase className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
+              <span>{role === "ADMIN" ? "COURT ARBITER PANEL" : role === "BUYER" ? "BUYER WORKSPACE" : "SUPPLIER WORKSPACE"}</span>
             </span>
           </div>
 

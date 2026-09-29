@@ -61,7 +61,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
                     {user.business_name}
                   </div>
                   <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                    {user.role === "buyer" ? "Buyer Pass" : "Verified Supplier"}
+                    {user.role === "admin" ? "⚖️ Neutral Arbiter" : user.role === "supplier" ? "Verified Supplier" : "Buyer Pass"}
                   </div>
                 </div>
               </div>
