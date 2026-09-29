@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Phone, Mail, MessageSquare, Send, CheckCircle2, Headphones } from "lucide-react";
+import { Phone, Mail, MessageSquare, Send, CheckCircle2, Headphones, Loader2 } from "lucide-react";
+import { submitSupportTicket } from "../api/client";
 
 export const ContactSection: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -9,10 +10,16 @@ export const ContactSection: React.FC = () => {
     phone: "",
     message: "",
   });
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSubmitting(true);
+    try {
+      await submitSupportTicket(formData);
+    } catch {}
+    setSubmitting(false);
     setSubmitted(true);
     setTimeout(() => {
       setSubmitted(false);
@@ -178,10 +185,20 @@ export const ContactSection: React.FC = () => {
 
                 <button
                   type="submit"
-                  className="w-full py-3.5 rounded-xl bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer"
+                  disabled={submitting}
+                  className="w-full py-3.5 rounded-xl bg-emerald-600 dark:bg-emerald-500 hover:bg-emerald-500 dark:hover:bg-emerald-400 text-white dark:text-slate-950 font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 transition-all cursor-pointer disabled:opacity-50"
                 >
-                  <Send className="w-4 h-4" />
-                  <span>Submit Secure Message</span>
+                  {submitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Submitting Ticket to Support Desk...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      <span>Submit Secure Message</span>
+                    </>
+                  )}
                 </button>
               </form>
             )}
