@@ -182,6 +182,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const newUser: User = {
       id: userData.id || "user_" + Math.random().toString(36).substring(2, 8),
       email: userData.email || "accounts@business.in",
+      password: userData.password || "Shield@Pass2026",
+      full_name: userData.full_name || userData.contact_person || "Authorized Signatory",
       business_name: userData.business_name || "Registered Enterprise",
       contact_person: userData.contact_person || "Director",
       designation: userData.designation || "Managing Director",

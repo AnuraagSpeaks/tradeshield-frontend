@@ -182,7 +182,9 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
     // Register user account
     const res = await register({
       business_name: businessName,
+      full_name: contactPerson || "Authorized Signatory",
       contact_person: contactPerson || "Authorized Signatory",
+      password: password || "Shield@Pass2026",
       designation: designation,
       email: email.trim().toLowerCase(),
       mobile: phone,

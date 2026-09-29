@@ -1,6 +1,8 @@
 export interface User {
   id: string;
   email: string;
+  password?: string;
+  full_name?: string;
   business_name: string;
   contact_person?: string;
   designation?: string;
