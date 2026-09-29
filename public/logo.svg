@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" width="240" height="60">
+  <defs>
+    <!-- Gradient for Shield -->
+    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0052FF" />
+      <stop offset="100%" stop-color="#0A192F" />
+    </linearGradient>
+    <!-- Gradient for Trust Arrow -->
+    <linearGradient id="trustGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+  </defs>
+
+  <!-- Logo Icon -->
+  <g transform="translate(10, 5)">
+    <!-- Shield Outline -->
+    <path d="M25,2 C38,2 45,7 45,18 C45,32 30,46 25,48 C20,46 5,32 5,18 C5,7 12,2 25,2 Z" fill="url(#shieldGrad)" />
+    <!-- Interlocking Security Core -->
+    <path d="M25,8 C32,8 37,11 37,18 C37,27 28,36 25,38 C22,36 13,27 13,18 C13,11 18,8 25,8 Z" fill="#FFFFFF" opacity="0.15" />
+    
+    <!-- Arrows showing transactions (dual flow) -->
+    <!-- Forward Arrow (Blue) -->
+    <path d="M16,22 L22,22 L22,16 L25,16 L25,25 L16,25 Z" fill="#0052FF" transform="rotate(45, 20.5, 20.5)" />
+    <!-- Reverse/Confirmation Arrow (Green) -->
+    <path d="M25,25 L34,25 L34,19 L31,19 L31,28 L25,28 Z" fill="url(#trustGrad)" transform="rotate(225, 29.5, 23.5)" />
+  </g>
+
+  <!-- Logo Text -->
+  <text x="70" y="38" font-family="'Outfit', 'Inter', sans-serif" font-size="28" font-weight="800" fill="#0A192F">
+    Pay<tspan fill="#0052FF">Shield</tspan><tspan fill="#10B981">X</tspan>
+  </text>
+  <text x="71" y="50" font-family="'Inter', sans-serif" font-size="9" font-weight="600" fill="#64748B" letter-spacing="1.5">
+    PAYMENT PROTECTION PLAN
+  </text>
+</svg>
