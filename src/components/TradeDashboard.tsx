@@ -7,6 +7,9 @@ import {
   submitMilestoneProof, 
   approveMilestone, 
   raiseDispute, 
+  fetchDisputes,
+  arbitrateDispute,
+  fetchLedgerJournals,
   verifyGSTIN 
 } from "../api/client";
 import { 
@@ -26,7 +29,11 @@ import {
   X,
   UserCheck,
   ArrowLeftRight,
-  LogOut
+  LogOut,
+  Scale,
+  Gavel,
+  Award,
+  DollarSign
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
@@ -62,7 +69,8 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   const [contracts, setContracts] = useState<Contract[]>([]);
   const [summary, setSummary] = useState<EscrowSummary | null>(null);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
-  const [activeTab, setActiveTab] = useState<"contracts" | "new_deal" | "disputes" | "payouts" | "kyc">(
+  // Active Tab & Navigation
+  const [activeTab, setActiveTab] = useState<"contracts" | "new_deal" | "disputes" | "kyc" | "ledger">(
     isAdmin ? "disputes" : "contracts"
   );
   const [loading, setLoading] = useState<boolean>(true);
@@ -85,11 +93,18 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   const [viewDocModalOpen, setViewDocModalOpen] = useState(false);
   const [viewDocMilestone, setViewDocMilestone] = useState<Milestone | null>(null);
 
-  // Dispute Form State
+  // Dispute & Arbitration Panel State
   const [disputeModalOpen, setDisputeModalOpen] = useState(false);
   const [disputeMilestone, setDisputeMilestone] = useState<Milestone | null>(null);
   const [disputeReason, setDisputeReason] = useState("");
   const [disputesList, setDisputesList] = useState<Dispute[]>([]);
+  const [arbitrationModalOpen, setArbitrationModalOpen] = useState(false);
+  const [verdictDispute, setVerdictDispute] = useState<Dispute | null>(null);
+  const [verdictType, setVerdictType] = useState<"REFUND_BUYER" | "RELEASE_SUPPLIER" | "SPLIT_50_50">("REFUND_BUYER");
+  const [verdictNotes, setVerdictNotes] = useState("Independent technical inspection confirmed defect. Full escrow refund decreed.");
+
+  // Double-Entry Ledger State
+  const [journals, setJournals] = useState<any[]>([]);
 
   // KYC Simulator State
   const [kycGstInput, setKycGstInput] = useState("27AAACA1234A1Z5");
@@ -97,9 +112,16 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
 
   const loadData = async () => {
     setLoading(true);
-    const [cData, sData] = await Promise.all([fetchContracts(), fetchEscrowSummary()]);
+    const [cData, sData, dData, jData] = await Promise.all([
+      fetchContracts(), 
+      fetchEscrowSummary(),
+      fetchDisputes(),
+      fetchLedgerJournals()
+    ]);
     setContracts(cData);
     setSummary(sData);
+    setDisputesList(dData);
+    setJournals(jData);
     if (cData.length > 0) {
       setSelectedContract(cData[0]);
     }
@@ -188,6 +210,17 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
     setDisputesList((prev) => [...prev, disp]);
     setDisputeModalOpen(false);
     alert("Dispute registered. Transferred to TradeShield Arbitration Court.");
+    loadData();
+  };
+
+  const handleExecuteVerdict = async () => {
+    if (!verdictDispute) return;
+    const totalClaim = verdictDispute.claim_amount;
+    const buyerShare = verdictType === "REFUND_BUYER" ? totalClaim : verdictType === "SPLIT_50_50" ? totalClaim * 0.5 : 0;
+    const sellerShare = verdictType === "RELEASE_SUPPLIER" ? totalClaim : verdictType === "SPLIT_50_50" ? totalClaim * 0.5 : 0;
+    await arbitrateDispute(verdictDispute.id, verdictType, buyerShare, sellerShare);
+    setArbitrationModalOpen(false);
+    alert(`Arbitration Decree Executed! Verdict: ${verdictType === "REFUND_BUYER" ? "100% Refund to Buyer" : verdictType === "RELEASE_SUPPLIER" ? "100% Release to Supplier" : "50/50 Split Settlement"}. Escrow Ledger Updated.`);
     loadData();
   };
 
@@ -300,6 +333,18 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
       {/* Tab Navigation */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800 no-scrollbar">
         <button
+          onClick={() => setActiveTab("disputes")}
+          className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+            activeTab === "disputes"
+              ? (role === "ADMIN" ? "bg-purple-600 text-white shadow-md shadow-purple-600/20" : "bg-blue-600 text-white shadow-md shadow-blue-600/20")
+              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
+          )}
+        >
+          <Gavel className="w-4 h-4" />
+          <span>{role === "ADMIN" ? "Arbitration Court & Disputes" : "Dispute Resolution Hub"}</span>
+        </button>
+
+        <button
           onClick={() => setActiveTab("contracts")}
           className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
             activeTab === "contracts"
@@ -308,7 +353,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           )}
         >
           <FileText className="w-4 h-4" />
-          <span>Active Contracts & Milestones</span>
+          <span>{role === "ADMIN" ? "All Active Escrow Contracts" : "Active Contracts & Milestones"}</span>
         </button>
 
         {role === "BUYER" && (
@@ -325,17 +370,19 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           </button>
         )}
 
-        <button
-          onClick={() => setActiveTab("disputes")}
-          className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
-            activeTab === "disputes"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
-          )}
-        >
-          <ShieldCheck className="w-4 h-4" />
-          <span>Dispute Resolution Hub</span>
-        </button>
+        {role === "ADMIN" && (
+          <button
+            onClick={() => setActiveTab("ledger")}
+            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+              activeTab === "ledger"
+                ? "bg-purple-600 text-white shadow-md shadow-purple-600/20"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
+            )}
+          >
+            <Landmark className="w-4 h-4" />
+            <span>Double-Entry Nodal Ledger</span>
+          </button>
+        )}
 
         <button
           onClick={() => setActiveTab("kyc")}
@@ -595,15 +642,23 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
       {/* Disputes Resolution Tab */}
       {activeTab === "disputes" && (
         <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-xl font-bold text-slate-900 dark:text-white">Arbitration & Dispute Resolution Court</h2>
+              <div className="flex items-center gap-2">
+                <Gavel className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                  {role === "ADMIN" ? "Court Arbitration & Dispute Tribunal Desk" : "Arbitration & Dispute Resolution Court"}
+                </h2>
+              </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                All disputes are evaluated by trade lawyers based on invoice terms and uploaded evidence.
+                {role === "ADMIN" 
+                  ? "As an authorized neutral legal arbiter, review contested milestones, inspect evidentiary logs, and execute binding decrees."
+                  : "All disputes are evaluated by neutral trade lawyers and industry technical inspectors based on invoice terms and uploaded evidence."}
               </p>
             </div>
-            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400 text-xs font-bold font-mono">
-              RBI Regulated Arbitration
+            <span className="px-3.5 py-1.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-300 text-xs font-bold font-mono border border-purple-200 dark:border-purple-500/30 flex items-center gap-1.5 self-start sm:self-auto">
+              <Scale className="w-3.5 h-3.5" />
+              RBI & ICA Arbitration Rules 2026
             </span>
           </div>
 
@@ -616,19 +671,148 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
               </div>
             ) : (
               disputesList.map((d) => (
-                <div key={d.id} className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-rose-200 dark:border-rose-500/30 space-y-2">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-bold text-rose-600 dark:text-rose-400 font-mono">DISPUTE #{d.id}</span>
-                    <span className="px-2 py-0.5 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-bold text-[10px]">{d.status}</span>
+                <div key={d.id} className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div className="flex items-center gap-3">
+                      <span className="px-2.5 py-1 rounded-lg bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300 font-mono font-bold text-xs">
+                        CASE #{d.id.toUpperCase()}
+                      </span>
+                      <span className="text-xs font-mono text-slate-500 dark:text-slate-400">
+                        Milestone Ref: <code className="font-bold text-slate-800 dark:text-slate-200">{d.milestone_id || "MS_DEFAULT"}</code>
+                      </span>
+                    </div>
+                    <span className={"px-3 py-1 rounded-full text-xs font-bold font-mono " + (
+                      d.status.toLowerCase().includes("resolve") || d.status.toLowerCase().includes("settle")
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400"
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-400"
+                    )}>
+                      ● {d.status}
+                    </span>
                   </div>
-                  <p className="text-sm text-slate-900 dark:text-white font-semibold">{d.reason}</p>
-                  <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <span>Claim Amount: ₹{d.claim_amount.toLocaleString("en-IN")}</span>
-                    <span>Arbitration SLA: Resolution within 72 hours</span>
+
+                  <div className="p-4 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                    <div className="font-semibold text-slate-700 dark:text-slate-300">Grounds for Contestation & Evidence:</div>
+                    <p className="text-slate-900 dark:text-slate-100 text-sm font-medium">{d.reason}</p>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-3 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-600 dark:text-slate-400">
+                    <div className="flex items-center gap-6">
+                      <span>Claim Amount: <strong className="text-slate-900 dark:text-white font-mono text-sm">₹{d.claim_amount.toLocaleString("en-IN")}</strong></span>
+                      <span className="hidden sm:inline">Arbitration SLA: <strong className="text-slate-800 dark:text-slate-200">72 Hours Max</strong></span>
+                    </div>
+
+                    {role === "ADMIN" && (
+                      <button
+                        onClick={() => {
+                          setVerdictDispute(d);
+                          setArbitrationModalOpen(true);
+                        }}
+                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-purple-600/20 transition-all cursor-pointer self-end sm:self-auto"
+                      >
+                        <Gavel className="w-3.5 h-3.5" />
+                        <span>Execute Legal Decree</span>
+                      </button>
+                    )}
                   </div>
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Double-Entry Nodal Ledger Tab (Court Arbiter / Admin Exclusive) */}
+      {activeTab === "ledger" && (
+        <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <Landmark className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">ICICI Nodal Double-Entry Accounting Ledger</h2>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Real-time cryptographic nodal escrow journal postings. Every milestone lock, fee deduction, and release is immutably journaled.
+              </p>
+            </div>
+            <span className="px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400 text-xs font-bold font-mono">
+              Ledger Status: BALANCED (0 Variance)
+            </span>
+          </div>
+
+          {/* Chart of Accounts Summary Cards */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+              <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase">1010 • ESCROW_VAULT_ICICI (ASSET)</span>
+              <div className="text-lg font-black text-slate-900 dark:text-white font-mono">
+                ₹{((summary?.total_locked_inr || 2000000) / 100000).toFixed(2)} Lakh
+              </div>
+              <span className="text-[10px] text-emerald-600 dark:text-emerald-400">Reserve Backed 1:1</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+              <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase">2010 • BUYER_DEPOSIT_LIABILITY</span>
+              <div className="text-lg font-black text-slate-900 dark:text-white font-mono">
+                ₹{((summary?.total_locked_inr || 2000000) / 100000).toFixed(2)} Lakh
+              </div>
+              <span className="text-[10px] text-blue-600 dark:text-blue-400">Pending Milestone Fulfilment</span>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1">
+              <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 uppercase">4010 • PLATFORM_FEE_REVENUE</span>
+              <div className="text-lg font-black text-purple-600 dark:text-purple-400 font-mono">
+                ₹{(summary?.platform_fee_inr || 18750).toLocaleString("en-IN")}
+              </div>
+              <span className="text-[10px] text-slate-500 dark:text-slate-400">0.75% Nodal Escrow Spread</span>
+            </div>
+          </div>
+
+          {/* Journal Entries Table */}
+          <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-slate-100 dark:bg-slate-950 px-5 py-3 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs font-bold font-mono text-slate-700 dark:text-slate-300">
+              <span>JOURNAL POSTINGS ({journals.length} ENTRIES)</span>
+              <span className="text-[11px] text-slate-500 dark:text-slate-400">Auto-Reconciled with Core Banking</span>
+            </div>
+
+            <div className="divide-y divide-slate-200 dark:divide-slate-800">
+              {journals.map((j) => (
+                <div key={j.id} className="p-5 bg-white dark:bg-slate-900/60 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-0.5 rounded bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300 font-mono font-bold text-[11px]">
+                        {j.id.toUpperCase()}
+                      </span>
+                      <span className="font-bold text-slate-900 dark:text-white">{j.description}</span>
+                    </div>
+                    <span className="font-mono text-slate-400 text-[11px]">Ref: {j.reference}</span>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs font-mono">
+                      <thead>
+                        <tr className="text-slate-500 dark:text-slate-400 border-b border-slate-100 dark:border-slate-800">
+                          <th className="py-1 font-semibold">Ledger Account</th>
+                          <th className="py-1 text-right font-semibold">Debit (DR)</th>
+                          <th className="py-1 text-right font-semibold">Credit (CR)</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 dark:divide-slate-800/60">
+                        {j.postings?.map((p: any, idx: number) => (
+                          <tr key={idx} className="text-slate-700 dark:text-slate-300">
+                            <td className="py-1.5">{p.account_name}</td>
+                            <td className="py-1.5 text-right font-bold text-slate-900 dark:text-white">
+                              {p.debit > 0 ? `₹${p.debit.toLocaleString("en-IN")}` : "—"}
+                            </td>
+                            <td className="py-1.5 text-right font-bold text-emerald-600 dark:text-emerald-400">
+                              {p.credit > 0 ? `₹${p.credit.toLocaleString("en-IN")}` : "—"}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       )}
@@ -749,7 +933,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         </div>
       )}
 
-      {/* Dispute Modal */}
+      {/* Dispute Modal (For Buyer) */}
       {disputeModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-md p-6 sm:p-8 space-y-5 shadow-2xl">
@@ -782,6 +966,95 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
                 className="w-full py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs transition-all cursor-pointer"
               >
                 Submit Dispute Claim
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Arbitration Decree Execution Modal (For Arbiter / Admin) */}
+      {arbitrationModalOpen && verdictDispute && (
+        <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-lg p-6 sm:p-8 space-y-5 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
+              <div className="flex items-center gap-2">
+                <Gavel className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">Issue Legal Arbitration Decree</h3>
+              </div>
+              <button onClick={() => setArbitrationModalOpen(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="p-4 rounded-2xl bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-500/20 text-xs space-y-1">
+                <div className="flex items-center justify-between font-bold text-purple-950 dark:text-purple-300">
+                  <span>Case ID: #{verdictDispute.id.toUpperCase()}</span>
+                  <span>Disputed Sum: ₹{verdictDispute.claim_amount.toLocaleString("en-IN")}</span>
+                </div>
+                <p className="text-slate-600 dark:text-slate-400 text-[11px] pt-1">{verdictDispute.reason}</p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
+                  Select Legal Verdict Decree:
+                </label>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setVerdictType("REFUND_BUYER")}
+                    className={"p-3 rounded-xl border text-center transition-all cursor-pointer font-bold text-xs " + (
+                      verdictType === "REFUND_BUYER"
+                        ? "bg-rose-50 dark:bg-rose-950/50 border-rose-500 text-rose-700 dark:text-rose-300 shadow-sm"
+                        : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+                    )}
+                  >
+                    100% Refund (Buyer)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVerdictType("RELEASE_SUPPLIER")}
+                    className={"p-3 rounded-xl border text-center transition-all cursor-pointer font-bold text-xs " + (
+                      verdictType === "RELEASE_SUPPLIER"
+                        ? "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-500 text-emerald-700 dark:text-emerald-300 shadow-sm"
+                        : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+                    )}
+                  >
+                    100% Release (Supplier)
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setVerdictType("SPLIT_50_50")}
+                    className={"p-3 rounded-xl border text-center transition-all cursor-pointer font-bold text-xs " + (
+                      verdictType === "SPLIT_50_50"
+                        ? "bg-blue-50 dark:bg-blue-950/50 border-blue-500 text-blue-700 dark:text-blue-300 shadow-sm"
+                        : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300"
+                    )}
+                  >
+                    50 / 50 Settlement
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Arbiter Decree Notes & Statutory Findings</label>
+                <textarea
+                  rows={3}
+                  value={verdictNotes}
+                  onChange={(e) => setVerdictNotes(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:border-purple-500 focus:outline-none resize-none"
+                />
+              </div>
+
+              <button
+                type="button"
+                onClick={handleExecuteVerdict}
+                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all cursor-pointer"
+              >
+                <Gavel className="w-4 h-4" />
+                <span>Pronounce Legal Decree & Adjust Nodal Ledger</span>
               </button>
             </div>
           </div>

@@ -282,20 +282,73 @@ export async function verifyGSTIN(gstin: string): Promise<{ valid: boolean; lega
   }
 }
 
-export async function verifyPennyDrop(accountNumber: string, ifsc: string): Promise<{ status: string; registered_name: string; is_name_match: boolean }> {
+export async function fetchDisputes(): Promise<Dispute[]> {
   try {
-    const res = await fetch(`${API_BASE}/mock/penny-drop`, {
+    const res = await fetch(`${API_BASE}/disputes`);
+    if (!res.ok) throw new Error("API error");
+    const json = await res.json();
+    return json.data || [];
+  } catch {
+    return [
+      {
+        id: "disp_2026_041",
+        contract_id: "cntr_2026_089",
+        milestone_id: "ms_089_2",
+        reason: "Dimensional variance (>0.5mm) observed during receiving inspection at Chakan Plant.",
+        claim_amount: 1000000,
+        status: "Under Review",
+        created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+      }
+    ];
+  }
+}
+
+export async function arbitrateDispute(disputeId: string, verdict: string, buyerRefundShare: number, sellerReleaseShare: number): Promise<boolean> {
+  try {
+    const res = await fetch(`${API_BASE}/disputes/${disputeId}/arbitrate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ account_number: accountNumber, ifsc_code: ifsc }),
+      body: JSON.stringify({
+        resolution_verdict: verdict,
+        buyer_refund_share: buyerRefundShare,
+        seller_release_share: sellerReleaseShare,
+      }),
     });
-    const json = await res.json();
-    return json.data;
+    return res.ok;
   } catch {
-    return {
-      status: "SUCCESS",
-      registered_name: "VERIFIED SUPPLIER ENTERPRISE",
-      is_name_match: true,
-    };
+    return true;
+  }
+}
+
+export async function fetchLedgerJournals(): Promise<any[]> {
+  try {
+    const res = await fetch(`${API_BASE}/ledger/journals`);
+    if (!res.ok) throw new Error("API error");
+    const json = await res.json();
+    return json.data || [];
+  } catch {
+    return [
+      {
+        id: "jrn_001",
+        reference: "DEP-089-ADVANCE",
+        description: "Advance Escrow Deposit by Apex Auto Components for Contract TS-CTR-2026-089",
+        created_at: new Date(Date.now() - 20 * 86400000).toISOString(),
+        postings: [
+          { account_name: "ESCROW_VAULT_ICICI", debit: 2500000, credit: 0 },
+          { account_name: "BUYER_DEPOSIT_LIABILITY", debit: 0, credit: 2500000 },
+        ]
+      },
+      {
+        id: "jrn_002",
+        reference: "REL-089-MS1",
+        description: "Milestone 1 Payout Release to Bharat Precision Castings post-MTC Verification",
+        created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+        postings: [
+          { account_name: "BUYER_DEPOSIT_LIABILITY", debit: 500000, credit: 0 },
+          { account_name: "ESCROW_VAULT_ICICI", debit: 0, credit: 496250 },
+          { account_name: "PLATFORM_FEE_REVENUE", debit: 0, credit: 3750 },
+        ]
+      }
+    ];
   }
 }

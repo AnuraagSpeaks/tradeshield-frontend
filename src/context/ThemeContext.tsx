@@ -14,7 +14,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [theme, setThemeState] = useState<Theme>(() => {
     const saved = localStorage.getItem('payshield_theme');
     if (saved === 'dark' || saved === 'light') return saved;
-    return 'dark'; // Default dark
+    return 'light'; // Default light
   });
 
   useEffect(() => {
