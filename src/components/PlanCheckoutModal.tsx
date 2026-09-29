@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { verifyGSTIN } from "../api/client";
+import { generateAndDownloadGSTInvoice } from "../utils/invoiceGenerator";
 
 export interface PlanDetails {
   id: "buyer_free" | "growth" | "business" | "enterprise";
@@ -251,6 +252,26 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
 
   const handleSimulatePayment = () => {
     setStep("success");
+  };
+
+  const handleDownloadInvoice = () => {
+    generateAndDownloadGSTInvoice({
+      invoiceNumber: "PSX-INV-" + (subId.replace("PSX-SUB-", "") || Math.floor(100000 + Math.random() * 900000)),
+      subscriptionRef: subId || "PSX-SUB-" + Math.floor(100000 + Math.random() * 900000),
+      date: new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }),
+      customerName: companyName || "Registered Business Entity",
+      customerGst: gstin || "07AAAAA1111A1ZA",
+      customerEmail: email || "accounts@company.com",
+      customerPhone: phone || "9876543210",
+      customerCity: city || "New Delhi",
+      planName: currentPlan.name,
+      billingCycle: billingCycle,
+      basePrice: basePrice,
+      cgst: basePrice > 0 ? Math.round(basePrice * 0.09) : 0,
+      sgst: basePrice > 0 ? Math.round(basePrice * 0.09) : 0,
+      igst: basePrice > 0 ? Math.round(basePrice * 0.18) : 0,
+      totalAmount: totalPrice,
+    });
   };
 
   return (
@@ -683,11 +704,15 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
                   <span className="text-slate-500">Protection Quota:</span>
                   <span className="font-bold text-emerald-600 dark:text-emerald-400">{currentPlan.transactionsLimit}</span>
                 </div>
-                <div className="flex justify-between">
+                <div className="flex justify-between items-center">
                   <span className="text-slate-500">GST Invoice:</span>
-                  <span className="text-blue-600 dark:text-blue-400 font-bold flex items-center gap-1 cursor-pointer">
-                    <Download className="w-3 h-3" /> Download Tax Invoice
-                  </span>
+                  <button
+                    type="button"
+                    onClick={handleDownloadInvoice}
+                    className="text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 border border-blue-200 dark:border-blue-500/30 transition-all cursor-pointer text-xs"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download Tax Invoice
+                  </button>
                 </div>
               </div>
 
