@@ -25,7 +25,7 @@ const AppContent: React.FC = () => {
   // Auth & Onboarding Modal
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [authRole, setAuthRole] = useState<"buyer" | "supplier">("buyer");
-  const [authMode, setAuthMode] = useState<"register" | "login">("register");
+  const [authMode, setAuthMode] = useState<"register" | "login">("login");
 
   const openLegalDoc = (doc: LegalDocType) => {
     setActiveLegalDoc(doc);
@@ -44,7 +44,7 @@ const AppContent: React.FC = () => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       setAuthRole(role);
-      setAuthMode("register");
+      setAuthMode("login");
       setAuthModalOpen(true);
     }
   };
@@ -55,7 +55,7 @@ const AppContent: React.FC = () => {
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
       setAuthRole("buyer");
-      setAuthMode("register");
+      setAuthMode("login");
       setAuthModalOpen(true);
     }
   };

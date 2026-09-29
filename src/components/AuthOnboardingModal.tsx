@@ -30,12 +30,12 @@ interface AuthModalProps {
 export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
   isOpen,
   initialRole = "buyer",
-  initialMode = "register",
+  initialMode = "login",
   onClose,
   onSuccess,
 }) => {
   const { login, register, demoLogin } = useAuth();
-  const [mode, setMode] = useState<"register" | "login">(initialMode);
+  const [mode, setMode] = useState<"register" | "login">("login");
   const [role, setRole] = useState<"buyer" | "supplier">(initialRole);
 
   // Form Fields
@@ -64,11 +64,12 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
   // Synchronize state when modal is opened or target role/mode changes
   useEffect(() => {
     if (isOpen) {
-      setMode(initialMode);
+      const targetMode = initialMode || "login";
+      setMode(targetMode);
       setRole(initialRole);
       setErrorMsg("");
       setActivatedPass(null);
-      if (initialMode === "login") {
+      if (targetMode === "login") {
         if (initialRole === "supplier") {
           setEmail("sales@bharatcastings.com");
           setPassword("Bharat@Shield2026");
@@ -190,7 +191,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
       setPan("AAAAA1111A");
       setCity("New Delhi");
       setState("Delhi");
-      setCategory("Textiles & Apparel Wholesale");
+      setCategory("Textiles, Fabrics & Garments");
     } else {
       setBusinessName("Bharat Precision Castings Ltd");
       setContactPerson("Rajesh Singhania");
@@ -201,30 +202,30 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
       setPan("AABCB5678B");
       setCity("Vadodara");
       setState("Gujarat");
-      setCategory("Heavy Engineering & Foundries");
+      setCategory("Heavy Engineering & Metal Castings");
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 bg-black/70 dark:bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-2xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl w-full max-w-xl max-h-[94vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
         
         {/* Header */}
         <div className="p-5 sm:p-6 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-950/80">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold">
+            <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold shrink-0">
               <ShieldCheck className="w-6 h-6" />
             </div>
             <div>
               <h2 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white">
                 {activatedPass
                   ? "Identity Verified & Pass Issued!"
-                  : mode === "register"
-                  ? "B2B Business Identity & Escrow Pass Onboarding"
-                  : "Sign In to Protected Escrow Portal"}
+                  : mode === "login"
+                  ? "Sign In to Escrow Portal"
+                  : "B2B Business Identity & Escrow Pass"}
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                RBI Nodal Escrow Protocol • Instant GSTIN & IMPS Validation
+                RBI Nodal Escrow Protocol • Instant Dual-Party Verification
               </p>
             </div>
           </div>
@@ -297,37 +298,126 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-          ) : (
-            <>
-              {/* Navigation Tabs (Register vs Sign In vs Quick Demo) */}
-              <div className="flex p-1 bg-slate-100 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800">
+          ) : mode === "login" ? (
+            /* DEFAULT PRIORITY: SIGN IN VIEW */
+            <div className="space-y-6">
+              {errorMsg && (
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-500/30 text-rose-700 dark:text-rose-400 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{errorMsg}</span>
+                </div>
+              )}
+
+              {/* Quick-Fill Test Credentials Banner */}
+              <div className="p-4 rounded-2xl bg-blue-50/70 dark:bg-slate-950 border border-blue-200 dark:border-blue-500/20 space-y-2.5">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-emerald-400" />
+                    <span>Quick Test Login (1-Click Fill):</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">Pre-Configured</span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleQuickFillCredentials("buyer")}
+                    className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-left transition-all cursor-pointer group shadow-sm hover:shadow"
+                  >
+                    <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 font-mono">BUYER (APEX AUTO)</div>
+                    <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">procurement@apexauto.in</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleQuickFillCredentials("supplier")}
+                    className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500 text-left transition-all cursor-pointer group shadow-sm hover:shadow"
+                  >
+                    <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">SUPPLIER (BHARAT)</div>
+                    <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">sales@bharatcastings.com</div>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleQuickFillCredentials("admin")}
+                    className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-left transition-all cursor-pointer group shadow-sm hover:shadow"
+                  >
+                    <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 font-mono">ARBITER COURT</div>
+                    <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">court@tradeshield.in</div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Sign In Form */}
+              <form onSubmit={handleLoginSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Registered Business Email *</label>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="E.g., procurement@apexauto.in"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none font-mono"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Password / Security PIN *</label>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <span>{loading ? "Authenticating Session & Verifying RBAC..." : "Authenticate & Sign In to Escrow Portal"}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </form>
+
+              {/* Registration Trigger Box */}
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 dark:bg-slate-950 p-4 rounded-2xl border border-slate-200 dark:border-slate-800">
+                <div>
+                  <div className="font-bold text-slate-900 dark:text-white text-xs">New business organization?</div>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">Activate your Verified Escrow Pass & GSTIN validation.</p>
+                </div>
+
                 <button
                   type="button"
                   onClick={() => {
                     setMode("register");
                     setErrorMsg("");
                   }}
-                  className={"flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer " + (
-                    mode === "register"
-                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
-                      : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
-                  )}
+                  className="px-4 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-700 font-bold text-xs transition-all cursor-pointer shrink-0 shadow-sm"
                 >
-                  New Registration (Activate Pass)
+                  Register Business Account →
                 </button>
+              </div>
+            </div>
+          ) : (
+            /* REGISTRATION VIEW */
+            <div className="space-y-6">
+              {/* Back to Login Header Banner */}
+              <div className="flex items-center justify-between p-3 rounded-2xl bg-blue-50/70 dark:bg-slate-950 border border-blue-200 dark:border-blue-500/20">
+                <span className="text-xs text-slate-600 dark:text-slate-400">Already have a registered account?</span>
                 <button
                   type="button"
                   onClick={() => {
                     setMode("login");
                     setErrorMsg("");
                   }}
-                  className={"flex-1 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer " + (
-                    mode === "login"
-                      ? "bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm"
-                      : "text-slate-500 hover:text-slate-900 dark:hover:text-slate-300"
-                  )}
+                  className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                 >
-                  Existing Account Sign In
+                  ← Back to Sign In
                 </button>
               </div>
 
@@ -338,334 +428,256 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                 </div>
               )}
 
-              {mode === "register" ? (
-                <form onSubmit={handleRegisterSubmit} className="space-y-5">
-                  {/* Role Selector Card */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
-                      1. Select Business Role & Protection Tier:
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setRole("buyer")}
-                        className={"p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between " + (
-                          role === "buyer"
-                            ? "bg-blue-50 dark:bg-slate-800/90 border-blue-600 dark:border-blue-500 shadow-md ring-1 ring-blue-500/20"
-                            : "bg-white dark:bg-slate-950/70 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
-                        )}
-                      >
-                        <div className="flex items-center justify-between">
-                          <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                          <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/20 px-2 py-0.5 rounded-full font-mono">
-                            Free Forever
-                          </span>
-                        </div>
-                        <div className="mt-2">
-                          <div className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">B2B Buyer Pass</div>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">For Importers, Wholesalers & Procurement Houses</p>
-                        </div>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => setRole("supplier")}
-                        className={"p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between " + (
-                          role === "supplier"
-                            ? "bg-emerald-50 dark:bg-slate-800/90 border-emerald-600 dark:border-emerald-500 shadow-md ring-1 ring-emerald-500/20"
-                            : "bg-white dark:bg-slate-950/70 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
-                        )}
-                      >
-                        <div className="flex items-center justify-between">
-                          <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                          <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
-                            Supplier Shield
-                          </span>
-                        </div>
-                        <div className="mt-2">
-                          <div className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">B2B Supplier Shield</div>
-                          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">For Manufacturers, Millers, Exporters & Foundries</p>
-                        </div>
-                      </button>
-                    </div>
-
-                    {/* Quick Demo Pre-fill helper */}
-                    <div className="flex items-center justify-between pt-1">
-                      <span className="text-[11px] text-slate-500 dark:text-slate-400">Need sample test data?</span>
-                      <button
-                        type="button"
-                        onClick={() => handleFillDemoData(role)}
-                        className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
-                      >
-                        <Sparkles className="w-3 h-3" /> Auto-fill {role === "buyer" ? "Buyer" : "Supplier"} Profile
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Company Legal Information */}
-                  <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
-                      2. Company & Tax Identity:
-                    </label>
-
-                    {/* GSTIN with live verify */}
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">GSTIN (15 Digits) or PAN</label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          required
-                          value={gstin}
-                          onChange={(e) => {
-                            setGstin(e.target.value.toUpperCase());
-                            setGstVerifiedData(null);
-                          }}
-                          placeholder="E.g., 07AAAAA1111A1ZA"
-                          className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-900 dark:text-white uppercase focus:border-blue-500 focus:outline-none"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleGSTVerify}
-                          disabled={isGstVerifying || !gstin}
-                          className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 disabled:opacity-50"
-                        >
-                          {isGstVerifying ? "Verifying..." : "Verify GST"}
-                        </button>
-                      </div>
-
-                      {gstVerifiedData && (
-                        <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between mt-1">
-                          <div className="flex items-center gap-2">
-                            <Check className="w-4 h-4 text-emerald-600" />
-                            <span><strong>Verified:</strong> {gstVerifiedData.legal_name}</span>
-                          </div>
-                          <span className="font-mono font-bold text-[11px] bg-emerald-100 dark:bg-emerald-900 px-2 py-0.5 rounded">
-                            Score: {gstVerifiedData.trust_score}%
-                          </span>
-                        </div>
+              <form onSubmit={handleRegisterSubmit} className="space-y-5">
+                {/* Role Selector Card */}
+                <div className="space-y-1.5">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
+                    1. Select Business Role & Protection Tier:
+                  </label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setRole("buyer")}
+                      className={"p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between " + (
+                        role === "buyer"
+                          ? "bg-blue-50 dark:bg-slate-800/90 border-blue-600 dark:border-blue-500 shadow-md ring-1 ring-blue-500/20"
+                          : "bg-white dark:bg-slate-950/70 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
                       )}
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Registered Firm / Company Name *</label>
-                        <input
-                          type="text"
-                          required
-                          value={businessName}
-                          onChange={(e) => setBusinessName(e.target.value)}
-                          placeholder="E.g., Rawat Handlooms Ltd"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
-                        />
+                    >
+                      <div className="flex items-center justify-between">
+                        <Briefcase className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                        <span className="text-[10px] font-black uppercase text-blue-600 dark:text-blue-400 bg-blue-100 dark:bg-blue-500/20 px-2 py-0.5 rounded-full font-mono">
+                          Free Forever
+                        </span>
                       </div>
-
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Trade Sector / Category</label>
-                        <select
-                          value={category}
-                          onChange={(e) => setCategory(e.target.value)}
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
-                        >
-                          <option>Heavy Engineering & Metal Castings</option>
-                          <option>Textiles, Fabrics & Garments</option>
-                          <option>Chemicals, Polymers & Resins</option>
-                          <option>Automotive Components & Spares</option>
-                          <option>Agricultural Commodities & Spices</option>
-                          <option>Electronics, Solar & Hardware</option>
-                          <option>Construction & Building Materials</option>
-                        </select>
+                      <div className="mt-2">
+                        <div className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">B2B Buyer Pass</div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">For Importers, Wholesalers & Procurement</p>
                       </div>
-                    </div>
+                    </button>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Operating City</label>
-                        <input
-                          type="text"
-                          required
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          placeholder="E.g., Pune, Vadodara, Surat"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
-                        />
+                    <button
+                      type="button"
+                      onClick={() => setRole("supplier")}
+                      className={"p-3.5 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between " + (
+                        role === "supplier"
+                          ? "bg-emerald-50 dark:bg-slate-800/90 border-emerald-600 dark:border-emerald-500 shadow-md ring-1 ring-emerald-500/20"
+                          : "bg-white dark:bg-slate-950/70 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700"
+                      )}
+                    >
+                      <div className="flex items-center justify-between">
+                        <Building2 className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                        <span className="text-[10px] font-black uppercase text-emerald-600 dark:text-emerald-400 bg-emerald-100 dark:bg-emerald-500/20 px-2 py-0.5 rounded-full font-mono">
+                          Supplier Shield
+                        </span>
                       </div>
-
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">State / Union Territory</label>
-                        <input
-                          type="text"
-                          required
-                          value={state}
-                          onChange={(e) => setState(e.target.value)}
-                          placeholder="E.g., Maharashtra, Gujarat"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
-                        />
+                      <div className="mt-2">
+                        <div className="font-extrabold text-slate-900 dark:text-white text-xs sm:text-sm">B2B Supplier Shield</div>
+                        <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">For Manufacturers, Millers & Foundries</p>
                       </div>
-                    </div>
+                    </button>
                   </div>
 
-                  {/* Authorized Signatory Details */}
-                  <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
-                    <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
-                      3. Key Contact & Escrow Signatory:
-                    </label>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Signatory Full Name *</label>
-                        <input
-                          type="text"
-                          required
-                          value={contactPerson}
-                          onChange={(e) => setContactPerson(e.target.value)}
-                          placeholder="E.g., Vikram Malhotra"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Designation *</label>
-                        <input
-                          type="text"
-                          required
-                          value={designation}
-                          onChange={(e) => setDesignation(e.target.value)}
-                          placeholder="E.g., Head of Procurement / Partner"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Official Business Email *</label>
-                        <input
-                          type="email"
-                          required
-                          value={email}
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="E.g., procurement@company.in"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
-                        />
-                      </div>
-
-                      <div className="space-y-1">
-                        <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Mobile (For OTP & Payment Alerts) *</label>
-                        <input
-                          type="tel"
-                          required
-                          pattern="[0-9]{10}"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          placeholder="E.g., 9820123456"
-                          className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
-                        />
-                      </div>
-                    </div>
+                  {/* Quick Demo Pre-fill helper */}
+                  <div className="flex items-center justify-between pt-1">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Need sample test data?</span>
+                    <button
+                      type="button"
+                      onClick={() => handleFillDemoData(role)}
+                      className="text-[11px] font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer flex items-center gap-1"
+                    >
+                      <Sparkles className="w-3 h-3" /> Auto-fill {role === "buyer" ? "Buyer" : "Supplier"} Profile
+                    </button>
                   </div>
+                </div>
 
-                  {/* Regulatory Declaration */}
-                  <div className="p-3.5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-500/20 space-y-2">
-                    <label className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                {/* Company Legal Information */}
+                <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
+                    2. Company & Tax Identity:
+                  </label>
+
+                  {/* GSTIN with live verify */}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">GSTIN (15 Digits) or PAN</label>
+                    <div className="flex gap-2">
                       <input
-                        type="checkbox"
-                        checked={agreedToTerms}
-                        onChange={(e) => setAgreedToTerms(e.target.checked)}
-                        className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
+                        type="text"
+                        required
+                        value={gstin}
+                        onChange={(e) => {
+                          setGstin(e.target.value.toUpperCase());
+                          setGstVerifiedData(null);
+                        }}
+                        placeholder="E.g., 07AAAAA1111A1ZA"
+                        className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-900 dark:text-white uppercase focus:border-blue-500 focus:outline-none"
                       />
-                      <span>
-                        I hereby declare that I am an authorized corporate signatory and agree to the <strong>PayShieldX Nodal Escrow Agreement</strong>, GSTIN compliance norms, and neutral arbitration protocol.
-                      </span>
-                    </label>
-                  </div>
-
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <span>{loading ? "Activating Digital Pass..." : role === "buyer" ? "Issue Free B2B Buyer Pass" : "Register Verified Supplier Account"}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </form>
-              ) : (
-                /* SIGN IN FORM */
-                <form onSubmit={handleLoginSubmit} className="space-y-4">
-                  {/* Quick-Fill Test Credentials Banner */}
-                  <div className="p-3.5 rounded-2xl bg-blue-50/70 dark:bg-slate-950 border border-blue-200 dark:border-blue-500/20 space-y-2.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-700 dark:text-slate-300">
-                      <span className="flex items-center gap-1.5">
-                        <Sparkles className="w-3.5 h-3.5 text-blue-600 dark:text-emerald-400" />
-                        <span>Quick-Fill Test Credentials:</span>
-                      </span>
-                      <span className="text-[10px] font-mono text-slate-500 dark:text-slate-400">1-Click Populate</span>
+                      <button
+                        type="button"
+                        onClick={handleGSTVerify}
+                        disabled={isGstVerifying || !gstin}
+                        className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                      >
+                        {isGstVerifying ? "Verifying..." : "Verify GST"}
+                      </button>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => handleQuickFillCredentials("buyer")}
-                        className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-blue-500 text-left transition-all cursor-pointer group shadow-sm hover:shadow"
-                      >
-                        <div className="text-[10px] font-bold text-blue-600 dark:text-blue-400 font-mono">BUYER (APEX AUTO)</div>
-                        <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">procurement@apexauto.in</div>
-                      </button>
+                    {gstVerifiedData && (
+                      <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between mt-1">
+                        <div className="flex items-center gap-2">
+                          <Check className="w-4 h-4 text-emerald-600" />
+                          <span><strong>Verified:</strong> {gstVerifiedData.legal_name}</span>
+                        </div>
+                        <span className="font-mono font-bold text-[11px] bg-emerald-100 dark:bg-emerald-900 px-2 py-0.5 rounded">
+                          Score: {gstVerifiedData.trust_score}%
+                        </span>
+                      </div>
+                    )}
+                  </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleQuickFillCredentials("supplier")}
-                        className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-emerald-500 text-left transition-all cursor-pointer group shadow-sm hover:shadow"
-                      >
-                        <div className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 font-mono">SUPPLIER (BHARAT)</div>
-                        <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">sales@bharatcastings.com</div>
-                      </button>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Registered Firm / Company Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        placeholder="E.g., Rawat Handlooms Ltd"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleQuickFillCredentials("admin")}
-                        className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-left transition-all cursor-pointer group shadow-sm hover:shadow"
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Trade Sector / Category</label>
+                      <select
+                        value={category}
+                        onChange={(e) => setCategory(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
                       >
-                        <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 font-mono">ARBITER COURT</div>
-                        <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">court@tradeshield.in</div>
-                      </button>
+                        <option>Heavy Engineering & Metal Castings</option>
+                        <option>Textiles, Fabrics & Garments</option>
+                        <option>Chemicals, Polymers & Resins</option>
+                        <option>Automotive Components & Spares</option>
+                        <option>Agricultural Commodities & Spices</option>
+                        <option>Electronics, Solar & Hardware</option>
+                        <option>Construction & Building Materials</option>
+                      </select>
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Registered Business Email *</label>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="E.g., procurement@apexauto.in"
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none font-mono"
-                    />
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Operating City</label>
+                      <input
+                        type="text"
+                        required
+                        value={city}
+                        onChange={(e) => setCity(e.target.value)}
+                        placeholder="E.g., Pune, Vadodara, Surat"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">State / Union Territory</label>
+                      <input
+                        type="text"
+                        required
+                        value={state}
+                        onChange={(e) => setState(e.target.value)}
+                        placeholder="E.g., Maharashtra, Gujarat"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Authorized Signatory Details */}
+                <div className="space-y-3 pt-2 border-t border-slate-200 dark:border-slate-800">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider font-mono">
+                    3. Key Contact & Escrow Signatory:
+                  </label>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Signatory Full Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={contactPerson}
+                        onChange={(e) => setContactPerson(e.target.value)}
+                        placeholder="E.g., Vikram Malhotra"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Designation *</label>
+                      <input
+                        type="text"
+                        required
+                        value={designation}
+                        onChange={(e) => setDesignation(e.target.value)}
+                        placeholder="E.g., Head of Procurement / Partner"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Password / Security PIN *</label>
-                    <input
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="••••••••"
-                      className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
-                    />
-                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Official Business Email *</label>
+                      <input
+                        type="email"
+                        required
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="E.g., procurement@company.in"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
 
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50"
-                  >
-                    <span>{loading ? "Authenticating Session & Verifying RBAC..." : "Authenticate & Sign In to Escrow Portal"}</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </form>
-              )}
-            </>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Mobile (For OTP & Alerts) *</label>
+                      <input
+                        type="tel"
+                        required
+                        pattern="[0-9]{10}"
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="E.g., 9820123456"
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Regulatory Declaration */}
+                <div className="p-3.5 rounded-2xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-500/20 space-y-2">
+                  <label className="flex items-start gap-2.5 text-xs text-slate-700 dark:text-slate-300 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={agreedToTerms}
+                      onChange={(e) => setAgreedToTerms(e.target.checked)}
+                      className="mt-0.5 rounded text-blue-600 focus:ring-blue-500"
+                    />
+                    <span>
+                      I hereby declare that I am an authorized corporate signatory and agree to the <strong>PayShieldX Nodal Escrow Agreement</strong>, GSTIN compliance norms, and neutral arbitration protocol.
+                    </span>
+                  </label>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  <span>{loading ? "Activating Digital Pass..." : role === "buyer" ? "Issue Free B2B Buyer Pass" : "Register Verified Supplier Account"}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
           )}
 
         </div>
