@@ -86,7 +86,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   const [proofMilestone, setProofMilestone] = useState<Milestone | null>(null);
   const [transporterName, setTransporterName] = useState("V-Trans Express Logistics");
   const [lrNumber, setLrNumber] = useState("LR-VT-2026-98124");
-  const [proofUrl, setProofUrl] = useState("https://docs.tradeshield.in/proofs/dispatch_lr_98124.pdf");
+  const [proofUrl, setProofUrl] = useState("https://docs.payshieldx.in/proofs/dispatch_lr_98124.pdf");
   const [dispatchNotes, setDispatchNotes] = useState("Consignment dispatched with 5,000 units inspected and sealed.");
 
   // Document Viewer Modal State
@@ -209,7 +209,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
     });
     setDisputesList((prev) => [...prev, disp]);
     setDisputeModalOpen(false);
-    alert("Dispute registered. Transferred to TradeShield Arbitration Court.");
+    alert("Dispute registered. Transferred to PayShield Arbitration Court.");
     loadData();
   };
 
@@ -254,7 +254,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
             {user
               ? `Logged in as ${user.business_name} (${user.city || "India"}) • Signatory: ${user.contact_person || "Authorized Signatory"} • GSTIN: ${user.gst} • Pass ID: ${user.pass_id || "PSX-ACTIVE"}`
               : role === "ADMIN"
-              ? "Logged in as TradeShield Neutral Arbitration Panel (New Delhi) • Arbiter: Justice (Retd.) K. N. Verma"
+              ? "Logged in as PayShield Neutral Arbitration Panel (New Delhi) • Arbiter: Justice (Retd.) K. N. Verma"
               : role === "BUYER"
               ? "Logged in as Apex Auto Components Pvt Ltd (Pune) • GSTIN: 27AAACA1234A1Z5"
               : "Logged in as Bharat Precision Castings Ltd (Vadodara) • GSTIN: 24AAACB5678B1Z2"}
@@ -858,7 +858,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
                   <p className="font-bold text-slate-900 dark:text-white text-sm">{kycResult.legal_name}</p>
                 </div>
                 <div className="flex items-center justify-between text-xs pt-2 border-t border-emerald-200 dark:border-emerald-500/20">
-                  <span className="text-slate-600 dark:text-slate-300">TradeShield Trust Score:</span>
+                  <span className="text-slate-600 dark:text-slate-300">PayShield Trust Score:</span>
                   <span className="font-bold font-mono text-emerald-700 dark:text-emerald-400">{kycResult.trust_score}/100 (Tier 1 Verified)</span>
                 </div>
               </div>

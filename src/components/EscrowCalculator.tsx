@@ -70,7 +70,7 @@ export const EscrowCalculator: React.FC = () => {
 
           <div className="lg:col-span-5 bg-gradient-to-b from-slate-900 to-slate-950 border border-emerald-500/30 rounded-2xl p-6 space-y-6">
             <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-              <span className="text-xs font-mono text-slate-400">TradeShield Fee (0.75%)</span>
+              <span className="text-xs font-mono text-slate-400">PayShield Fee (0.75%)</span>
               <span className="text-lg font-bold text-white font-mono">₹{platformFee.toLocaleString("en-IN")}</span>
             </div>
 

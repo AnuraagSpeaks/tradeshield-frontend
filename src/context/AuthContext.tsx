@@ -54,8 +54,8 @@ const DEMO_ACCOUNTS: Record<string, User> = {
   },
   admin: {
     id: "user_arbiter_1",
-    email: "court@tradeshield.in",
-    business_name: "TradeShield Neutral Arbitration Panel",
+    email: "court@payshieldx.in",
+    business_name: "PayShield Neutral Arbitration Panel",
     contact_person: "Justice (Retd.) K. N. Verma",
     designation: "Chief Legal Arbiter",
     gst: "07AAACT0001A1Z9",

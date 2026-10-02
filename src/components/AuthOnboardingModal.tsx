@@ -306,7 +306,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
       setEmail("sales@bharatcastings.com");
       setPassword("Bharat@Shield2026");
     } else {
-      setEmail("court@tradeshield.in");
+      setEmail("court@payshieldx.in");
       setPassword("Arbiter@Shield2026");
     }
     setErrorMsg("");
@@ -496,7 +496,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                     className="p-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-purple-500 text-left transition-all cursor-pointer group shadow-sm hover:shadow"
                   >
                     <div className="text-[10px] font-bold text-purple-600 dark:text-purple-400 font-mono">ARBITER COURT</div>
-                    <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">court@tradeshield.in</div>
+                    <div className="text-[11px] font-medium text-slate-700 dark:text-slate-300 truncate">court@payshieldx.in</div>
                   </button>
                 </div>
               </div>
