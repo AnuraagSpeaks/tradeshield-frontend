@@ -94,6 +94,7 @@ export const PricingSection: React.FC<PricingProps> = ({ onOpenRole }) => {
 
                 <ul className='space-y-3 text-xs text-slate-700 dark:text-slate-300 pt-6 mt-6 border-t border-slate-100 dark:border-slate-800'>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Up to 20 transactions / month</li>
+                  <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> <strong>₹2,00,000</strong> max monthly transaction value</li>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Verified Supplier Trust Badge</li>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Dual approval system access</li>
                   <li className='flex items-center gap-2 text-slate-400 dark:text-slate-500 line-through'><X className='w-4 h-4 text-slate-400 dark:text-slate-600 shrink-0' /> Dedicated arbitration support</li>
@@ -124,6 +125,7 @@ export const PricingSection: React.FC<PricingProps> = ({ onOpenRole }) => {
 
                 <ul className='space-y-3 text-xs text-slate-700 dark:text-slate-300 pt-6 mt-6 border-t border-slate-100 dark:border-slate-800'>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Up to 50 transactions / month</li>
+                  <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> <strong>₹5,00,000</strong> max monthly transaction value</li>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Verified Supplier Trust Badge</li>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Dual approval system access</li>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Dedicated arbitration support</li>
@@ -150,6 +152,7 @@ export const PricingSection: React.FC<PricingProps> = ({ onOpenRole }) => {
 
                 <ul className='space-y-3 text-xs text-slate-700 dark:text-slate-300 pt-6 mt-6 border-t border-slate-100 dark:border-slate-800'>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Up to 100 transactions / month</li>
+                  <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> <strong>₹10,00,000</strong> max monthly transaction value</li>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Verified Supplier Trust Badge</li>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Custom API Integrations</li>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> 24/7 dedicated legal arbiters</li>
@@ -163,46 +166,6 @@ export const PricingSection: React.FC<PricingProps> = ({ onOpenRole }) => {
                 Get Enterprise Plan
               </button>
             </div>
-          </div>
-        </div>
-
-        {/* 3. Interactive Transaction Fee Estimator */}
-        <div className='max-w-xl mx-auto p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-xl space-y-5 transition-colors'>
-          <div className='flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-mono font-bold uppercase'>
-            <Calculator className='w-4 h-4' />
-            <span>Transaction Fee & Effective Cost Estimator</span>
-          </div>
-
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
-            <div>
-              <label className='block text-xs text-slate-500 dark:text-slate-400 mb-1'>Monthly Trade Volume (INR)</label>
-              <input
-                type='number'
-                value={turnover}
-                onChange={(e) => setTurnover(Math.max(10000, Number(e.target.value)))}
-                className='w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-sm focus:border-emerald-500 focus:outline-none'
-              />
-            </div>
-
-            <div>
-              <label className='block text-xs text-slate-500 dark:text-slate-400 mb-1'>Selected Supplier Plan</label>
-              <select
-                value={selectedPlanFee}
-                onChange={(e) => setSelectedPlanFee(Number(e.target.value))}
-                className='w-full px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-sm focus:border-emerald-500 focus:outline-none'
-              >
-                <option value={599}>Growth Plan (₹599/mo)</option>
-                <option value={1499}>Business Plan (₹1499/mo)</option>
-                <option value={2499}>Enterprise Plan (₹2499/mo)</option>
-              </select>
-            </div>
-          </div>
-
-          <div className='p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 flex items-center justify-between'>
-            <span className='text-xs text-slate-600 dark:text-slate-300 font-medium'>Effective protection cost:</span>
-            <span className='text-lg font-extrabold text-emerald-600 dark:text-emerald-400 font-mono'>
-              {effectivePercent}% of turnover
-            </span>
           </div>
         </div>
 

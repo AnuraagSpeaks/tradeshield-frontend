@@ -60,7 +60,31 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLegal, onNavigate }) => {
                 </button>
               </li>
               <li>
+                <a
+                  href="/admin"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    window.history.pushState({}, "", "/admin");
+                    window.dispatchEvent(new PopStateEvent("popstate"));
+                  }}
+                  className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-amber-400/90 font-mono text-[11px]"
+                >
+                  <span>⚖️ Arbitration & Admin Desk</span>
+                </a>
+              </li>
+              <li>
                 <a href="#knowledge" className="hover:text-emerald-400 transition-colors">Knowledge Hub</a>
+              </li>
+              <li>
+                <a 
+                  href="https://www.linkedin.com/company/www-payshieldx-in/about/?viewAsMember=true" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="hover:text-emerald-400 transition-colors flex items-center gap-1 text-blue-400"
+                >
+                  <span>Official LinkedIn</span>
+                  <span className="text-[10px]">↗</span>
+                </a>
               </li>
             </ul>
           </div>

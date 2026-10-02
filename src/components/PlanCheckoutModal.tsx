@@ -65,9 +65,10 @@ export const PLANS_DATA: Record<string, PlanDetails> = {
     period: "per month",
     badge: "Starter",
     tagline: "For small wholesalers, distributors, and local manufacturers seeking buyer trust.",
-    transactionsLimit: "Up to 20 transactions / month",
+    transactionsLimit: "20 transactions / month • ₹2,00,000 monthly value",
     features: [
       "Up to 20 escrow transactions per month",
+      "₹2,00,000 monthly transaction value limit",
       "Verified Supplier Silver Trust Badge on directory",
       "Dual-approval proposal builder with instant locks",
       "Direct bank settlement via IMPS / RTGS within 3 hours of QC",
@@ -86,9 +87,10 @@ export const PLANS_DATA: Record<string, PlanDetails> = {
     period: "per month",
     badge: "Recommended",
     tagline: "For active exporters, industrial suppliers, and established multi-state traders.",
-    transactionsLimit: "Up to 50 transactions / month",
+    transactionsLimit: "50 transactions / month • ₹5,00,000 monthly value",
     features: [
       "Up to 50 escrow transactions per month",
+      "₹5,00,000 monthly transaction value limit",
       "Verified Supplier Gold Trust Badge with top ranking",
       "Dedicated arbitration officer assigned to all disputes",
       "Multi-tranche milestone contracts (Advance, Dispatch, QC)",
@@ -108,9 +110,10 @@ export const PLANS_DATA: Record<string, PlanDetails> = {
     period: "per month",
     badge: "High Volume",
     tagline: "For high-volume export houses, large manufacturers, and procurement consortiums.",
-    transactionsLimit: "Up to 100 transactions / month",
+    transactionsLimit: "100 transactions / month • ₹10,00,000 monthly value",
     features: [
-      "Up to 100 transactions per month (Custom volume available)",
+      "Up to 100 transactions per month",
+      "₹10,00,000 monthly transaction value limit",
       "Platinum Verified Supplier Enterprise Badge",
       "Custom ERP & B2B portal API integration support",
       "24/7 dedicated legal arbiters and custom contract templates",
@@ -539,141 +542,196 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
           )}
 
           {step === "payment" && (
-            <div className="space-y-6 max-w-lg mx-auto">
-              <div className="text-center space-y-1">
-                <span className="px-3 py-1 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 text-xs font-mono font-bold">
-                  256-Bit SSL Escrow Gateway
-                </span>
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white mt-2">
-                  Pay ₹{totalPrice.toLocaleString("en-IN")} via Escrow Gate
-                </h3>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  Plan: <strong>{currentPlan.name}</strong> • Bill to: <strong>{companyName}</strong>
-                </p>
-              </div>
-
-              {/* Payment Methods */}
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("upi")}
-                  className={"p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition-all cursor-pointer " + (
-                    paymentMethod === "upi"
-                      ? "bg-blue-50 dark:bg-slate-800 border-blue-600 text-blue-600 dark:text-blue-400 font-bold"
-                      : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
-                  )}
-                >
-                  <QrCode className="w-5 h-5" />
-                  <span className="text-xs">UPI / QR</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("card")}
-                  className={"p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition-all cursor-pointer " + (
-                    paymentMethod === "card"
-                      ? "bg-blue-50 dark:bg-slate-800 border-blue-600 text-blue-600 dark:text-blue-400 font-bold"
-                      : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
-                  )}
-                >
-                  <CreditCard className="w-5 h-5" />
-                  <span className="text-xs">Card</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setPaymentMethod("netbanking")}
-                  className={"p-3.5 rounded-2xl border flex flex-col items-center gap-2 transition-all cursor-pointer " + (
-                    paymentMethod === "netbanking"
-                      ? "bg-blue-50 dark:bg-slate-800 border-blue-600 text-blue-600 dark:text-blue-400 font-bold"
-                      : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400"
-                  )}
-                >
-                  <Building2 className="w-5 h-5" />
-                  <span className="text-xs">NetBanking</span>
-                </button>
-              </div>
-
-              {/* Payment Box Simulation */}
-              <div className="p-6 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-center space-y-4">
-                {paymentMethod === "upi" && (
-                  <div className="space-y-3">
-                    <div className="w-32 h-32 mx-auto bg-white p-2 rounded-xl border border-slate-300 flex items-center justify-center shadow-inner">
-                      <QrCode className="w-24 h-24 text-slate-900" />
+            <div className="space-y-5 max-w-xl mx-auto animate-in fade-in zoom-in-95 duration-150">
+              
+              {/* Razorpay Branded Checkout Box */}
+              <div className="border border-slate-200 dark:border-slate-800 rounded-2xl overflow-hidden shadow-xl bg-white dark:bg-slate-950">
+                {/* Razorpay Header */}
+                <div className="bg-gradient-to-r from-blue-700 via-blue-800 to-indigo-900 text-white p-4 sm:p-5 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm border border-white/20 flex items-center justify-center font-bold text-base text-white">
+                      PSX
                     </div>
-                    <p className="text-xs text-slate-600 dark:text-slate-400 font-mono">
-                      Scan via GPay, PhonePe, Paytm or BHIM
-                    </p>
-                    <p className="text-xs font-bold text-slate-800 dark:text-slate-200">
-                      UPI VPA: <code className="text-blue-600 dark:text-blue-400">payshieldx.nodal@icici</code>
-                    </p>
-                  </div>
-                )}
-
-                {paymentMethod === "card" && (
-                  <div className="space-y-3 text-left">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Card Number</label>
-                      <input
-                        type="text"
-                        placeholder="4111 2222 3333 4444"
-                        defaultValue="4111 2222 3333 4444"
-                        className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Expiry MM/YY</label>
-                        <input
-                          type="text"
-                          placeholder="12/28"
-                          defaultValue="12/28"
-                          className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs"
-                        />
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-extrabold text-sm sm:text-base">PAYSHIELDX</span>
+                        <span className="text-[10px] bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 px-1.5 py-0.5 rounded font-mono font-bold">VERIFIED B2B</span>
                       </div>
-                      <div>
-                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">CVV</label>
-                        <input
-                          type="password"
-                          placeholder="888"
-                          defaultValue="888"
-                          className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 font-mono text-xs"
-                        />
-                      </div>
+                      <p className="text-[11px] text-blue-200">Merchant: S.S. ENTERPRISES</p>
                     </div>
                   </div>
-                )}
-
-                {paymentMethod === "netbanking" && (
-                  <div className="space-y-3 text-left">
-                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Select Corporate / Retail Bank</label>
-                    <select className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs">
-                      <option>HDFC Bank Corporate</option>
-                      <option>ICICI Bank Direct</option>
-                      <option>State Bank of India</option>
-                      <option>Axis Bank</option>
-                      <option>Kotak Mahindra Bank</option>
-                    </select>
+                  <div className="text-right">
+                    <span className="text-[10px] uppercase font-mono text-blue-200 block">Amount to Pay</span>
+                    <span className="text-xl sm:text-2xl font-black font-mono text-white">₹{totalPrice.toLocaleString("en-IN")}</span>
                   </div>
-                )}
+                </div>
 
-                <button
-                  type="button"
-                  onClick={handleSimulatePayment}
-                  className="w-full py-3.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/25 transition-all cursor-pointer"
-                >
-                  <Lock className="w-4 h-4" />
-                  <span>Authorize ₹{totalPrice.toLocaleString("en-IN")} via Escrow Gate</span>
-                </button>
+                {/* Subheader info bar */}
+                <div className="bg-slate-100 dark:bg-slate-900 px-4 py-2 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between text-[11px] text-slate-600 dark:text-slate-400 font-mono">
+                  <span>Plan: <strong>{currentPlan.name}</strong></span>
+                  <span>Order: <strong>{subId || "ORDER_PSX_" + Math.floor(100000 + Math.random() * 900000)}</strong></span>
+                </div>
 
-                <button
-                  type="button"
-                  onClick={() => setStep("details")}
-                  className="text-xs text-slate-500 hover:text-slate-900 dark:hover:text-white underline cursor-pointer"
-                >
-                  &larr; Back to plan selection
-                </button>
+                {/* Body / Payment Options */}
+                <div className="p-4 sm:p-6 space-y-4">
+                  {/* Tab Selector */}
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("upi")}
+                      className={"py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 transition-all cursor-pointer text-xs font-bold " + (
+                        paymentMethod === "upi"
+                          ? "bg-blue-50 dark:bg-blue-950/60 border-blue-600 text-blue-700 dark:text-blue-400 shadow-sm"
+                          : "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100"
+                      )}
+                    >
+                      <QrCode className="w-4 h-4" />
+                      <span>UPI / QR</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("card")}
+                      className={"py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 transition-all cursor-pointer text-xs font-bold " + (
+                        paymentMethod === "card"
+                          ? "bg-blue-50 dark:bg-blue-950/60 border-blue-600 text-blue-700 dark:text-blue-400 shadow-sm"
+                          : "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100"
+                      )}
+                    >
+                      <CreditCard className="w-4 h-4" />
+                      <span>Card</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setPaymentMethod("netbanking")}
+                      className={"py-2.5 px-3 rounded-xl border flex items-center justify-center gap-2 transition-all cursor-pointer text-xs font-bold " + (
+                        paymentMethod === "netbanking"
+                          ? "bg-blue-50 dark:bg-blue-950/60 border-blue-600 text-blue-700 dark:text-blue-400 shadow-sm"
+                          : "bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-100"
+                      )}
+                    >
+                      <Building2 className="w-4 h-4" />
+                      <span>NetBanking</span>
+                    </button>
+                  </div>
+
+                  {/* Payment Specific Content */}
+                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800/80">
+                    {paymentMethod === "upi" && (
+                      <div className="space-y-4 text-center">
+                        <div className="flex flex-col items-center justify-center">
+                          <div className="w-36 h-36 bg-white p-2.5 rounded-2xl border-2 border-slate-200 dark:border-slate-700 flex items-center justify-center shadow-md">
+                            <QrCode className="w-28 h-28 text-slate-900" />
+                          </div>
+                          <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 mt-2">
+                            Scan with Google Pay, PhonePe, Paytm, or CRED
+                          </span>
+                        </div>
+
+                        <div className="relative flex py-1 items-center">
+                          <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                          <span className="flex-shrink mx-3 text-[10px] font-bold uppercase tracking-wider text-slate-400">OR ENTER VPA / UPI ID</span>
+                          <div className="flex-grow border-t border-slate-200 dark:border-slate-800"></div>
+                        </div>
+
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="username@okhdfcbank"
+                            defaultValue={email ? email.split("@")[0] + "@upi" : "business@okhdfcbank"}
+                            className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {paymentMethod === "card" && (
+                      <div className="space-y-3">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Card Number</label>
+                          <input
+                            type="text"
+                            placeholder="5241 •••• •••• 4022"
+                            defaultValue="5241 8900 1234 4022"
+                            className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Expiry MM/YY</label>
+                            <input
+                              type="text"
+                              placeholder="08/29"
+                              defaultValue="08/29"
+                              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">CVV</label>
+                            <input
+                              type="password"
+                              placeholder="•••"
+                              defaultValue="786"
+                              className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {paymentMethod === "netbanking" && (
+                      <div className="space-y-3">
+                        <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Popular Banks</label>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+                          {["HDFC Bank", "ICICI Bank", "SBI", "Axis Bank"].map((bank, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              className="p-2 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 font-semibold text-center hover:border-blue-500 hover:text-blue-600 transition-all cursor-pointer"
+                            >
+                              {bank}
+                            </button>
+                          ))}
+                        </div>
+                        <select className="w-full px-3 py-2 rounded-xl bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs">
+                          <option>All Other Indian Banks (Kotak, PNB, BOB, IndusInd...)</option>
+                          <option>Kotak Mahindra Bank</option>
+                          <option>Punjab National Bank</option>
+                          <option>Bank of Baroda</option>
+                          <option>Yes Bank Corporate</option>
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Razorpay Action Button */}
+                  <button
+                    type="button"
+                    onClick={handleSimulatePayment}
+                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-500/25 transition-all cursor-pointer"
+                  >
+                    <Lock className="w-4 h-4" />
+                    <span>Pay ₹{totalPrice.toLocaleString("en-IN")} & Activate Instant Escrow</span>
+                  </button>
+
+                  {/* Razorpay Footer Branding */}
+                  <div className="pt-2 flex items-center justify-between text-[11px] text-slate-400 border-t border-slate-100 dark:border-slate-800/60">
+                    <button
+                      type="button"
+                      onClick={() => setStep("details")}
+                      className="text-slate-500 hover:text-slate-900 dark:hover:text-white underline cursor-pointer"
+                    >
+                      &larr; Back to plan selection
+                    </button>
+                    <div className="flex items-center gap-1.5 font-mono text-[10px]">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                      <span>Secured by <strong>Razorpay</strong> & RBI Escrow</span>
+                    </div>
+                  </div>
+                </div>
               </div>
+
             </div>
           )}
 

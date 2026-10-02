@@ -56,10 +56,10 @@ export function generateAndDownloadGSTInvoice(data: InvoiceData) {
   <div class="invoice-card">
     <div class="header">
       <div class="brand">
-        <h1>PAYSHIELDX TECHNOLOGIES PVT LTD</h1>
-        <p>RBI Nodal Escrow Infrastructure & Trade Protection Platform</p>
-        <p>Connaught Place, New Delhi 110001 • GSTIN: <strong>07AAACP9988A1Z2</strong></p>
-        <p>Support: support@payshieldx.in • PAN: AAACP9988A</p>
+        <h1>S.S. ENTERPRISES</h1>
+        <p>Tower 1, Assotech Business Cresterra, Plot No. 22, Sector-135, Noida - 201305</p>
+        <p>GSTIN: <strong>20KBIPS8898M1ZG</strong> • PAN: <strong>KBIPS8898M</strong></p>
+        <p>Support: support@payshieldx.in</p>
       </div>
       <div class="invoice-meta">
         <h2>TAX INVOICE</h2>
@@ -144,7 +144,6 @@ export function generateAndDownloadGSTInvoice(data: InvoiceData) {
 
     <div class="footer">
       <p>This is a computer-generated Tax Invoice issued in accordance with Section 31 of the CGST Act, 2017. No physical signature required.</p>
-      <p>PayShieldX Technologies Pvt Ltd • Escrow Nodal Accounts Monitored Under RBI/DPSS/2019-20/174 Guidelines.</p>
     </div>
 
     <button class="print-btn" onclick="window.print()">Print / Save as PDF</button>

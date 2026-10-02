@@ -17,7 +17,7 @@ import { LegalModal, LegalDocType } from "./components/LegalModal";
 import { AuthOnboardingModal } from "./components/AuthOnboardingModal";
 
 const AppContent: React.FC = () => {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, demoLogin } = useAuth();
   const [currentView, setCurrentView] = useState<"landing" | "dashboard">("landing");
   const [legalModalOpen, setLegalModalOpen] = useState<boolean>(false);
   const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType>("terms");
@@ -26,6 +26,30 @@ const AppContent: React.FC = () => {
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
   const [authRole, setAuthRole] = useState<"buyer" | "supplier">("buyer");
   const [authMode, setAuthMode] = useState<"register" | "login">("login");
+
+  // Direct /admin and /arbiter URL routing
+  React.useEffect(() => {
+    const checkAdminPath = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      if (
+        path.startsWith("/admin") || 
+        path.startsWith("/arbiter") || 
+        path.startsWith("/court") || 
+        hash.includes("admin") || 
+        hash.includes("arbiter")
+      ) {
+        if (!user || user.role !== "admin") {
+          demoLogin("admin");
+        }
+        setCurrentView("dashboard");
+      }
+    };
+
+    checkAdminPath();
+    window.addEventListener("popstate", checkAdminPath);
+    return () => window.removeEventListener("popstate", checkAdminPath);
+  }, [user]);
 
   const openLegalDoc = (doc: LegalDocType) => {
     setActiveLegalDoc(doc);

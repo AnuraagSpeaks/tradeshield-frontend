@@ -99,6 +99,25 @@ export const ContactSection: React.FC = () => {
                 <p className="text-xs text-slate-500">2-hour response window for verified businesses</p>
               </div>
             </div>
+
+            {/* Official LinkedIn Card */}
+            <a 
+              href="https://www.linkedin.com/company/www-payshieldx-in/about/?viewAsMember=true"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="p-5 rounded-2xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-500/30 hover:border-blue-500/60 transition-all flex items-center justify-between shadow-sm group"
+            >
+              <div className="flex items-center gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black flex items-center justify-center text-sm shadow-md shadow-blue-500/20">
+                  in
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 dark:text-white text-sm">Official LinkedIn Company Page</h4>
+                  <p className="text-[11px] text-blue-600 dark:text-blue-400">linkedin.com/company/www-payshieldx-in</p>
+                </div>
+              </div>
+              <span className="text-blue-600 dark:text-blue-400 text-xs font-bold group-hover:translate-x-0.5 transition-transform">↗</span>
+            </a>
           </div>
 
           {/* Ticket Submission Form */}
