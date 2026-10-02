@@ -136,3 +136,125 @@ export interface EscrowSummary {
   platform_fee_inr: number;
   active_deals_count: number;
 }
+
+export interface KYCDocument {
+  type: string;
+  document_no: string;
+  url: string;
+  status: "Approved" | "Pending" | "Rejected";
+  uploaded_at: string;
+  verified_at?: string;
+}
+
+export interface RefundRecord {
+  refund_id: string;
+  transaction_id: string;
+  amount: number;
+  reason: string;
+  status: string;
+  utr_number?: string;
+  created_at: string;
+}
+
+export interface SettlementDetails {
+  account_number: string;
+  bank_name: string;
+  ifsc_code: string;
+  account_holder: string;
+  is_penny_dropped: boolean;
+  penny_drop_status: string;
+  settlement_cycle: string;
+}
+
+export interface BuyerRecord {
+  buyer_id: string;
+  name: string;
+  company_name: string;
+  mobile: string;
+  email: string;
+  gstin: string;
+  pan: string;
+  kyc_status: "Approved" | "Pending" | "Rejected";
+  completed_transactions: number;
+  disputes: number;
+  total_transaction_value: number;
+  refund_history: RefundRecord[];
+  account_status: "Active" | "Suspended" | "Under Review";
+  created_at: string;
+}
+
+export interface SupplierRecord {
+  supplier_id: string;
+  company_name: string;
+  contact_person: string;
+  mobile: string;
+  email: string;
+  gstin: string;
+  pan: string;
+  kyc_documents: KYCDocument[];
+  verification_status: "Approved" | "Pending" | "Rejected";
+  supplier_plan: string;
+  plan_expiry: string;
+  total_proposals: number;
+  accepted_proposals: number;
+  rejected_proposals: number;
+  pending_proposals: number;
+  completed_transactions: number;
+  disputes: number;
+  refunds: number;
+  settlement_info: SettlementDetails;
+  account_status: "Active" | "Suspended" | "Under Review";
+  created_at: string;
+}
+
+export interface SettlementItem {
+  settlement_id: string;
+  supplier_id: string;
+  supplier_name: string;
+  bank_name: string;
+  account_no: string;
+  ifsc_code: string;
+  amount: number;
+  deal_ref: string;
+  status: "PENDING" | "PROCESSING" | "SETTLED";
+  utr_number?: string;
+  created_at: string;
+}
+
+export interface AdminBusinessHealthStats {
+  total_buyers: number;
+  total_suppliers: number;
+  active_users: number;
+  new_registrations_today: number;
+  new_registrations_week: number;
+  new_registrations_month: number;
+  kyc_pending: number;
+  kyc_approved: number;
+  kyc_rejected: number;
+  total_payment_proposals: number;
+  pending_proposals: number;
+  approved_proposals: number;
+  disputed_transactions: number;
+  failed_transactions: number;
+  platform_revenue: number;
+  membership_revenue: number;
+  refund_amount: number;
+  pending_settlements: number;
+  today_collection: number;
+  monthly_revenue: number;
+}
+
+export interface AdminFinanceStats {
+  membership_revenue: number;
+  membership_growth: number;
+  membership_business: number;
+  membership_enterprise: number;
+  other_revenue: number;
+  total_revenue: number;
+  escrow_nodal_balance: number;
+  pending_settlement_amount: number;
+  refunds_total: number;
+  today_collection: number;
+  monthly_revenue: number;
+  pending_settlements: SettlementItem[];
+}

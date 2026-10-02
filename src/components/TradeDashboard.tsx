@@ -38,6 +38,7 @@ import {
 
 import { useAuth } from "../context/AuthContext";
 import { DocumentViewerModal } from "./DocumentViewerModal";
+import { AdminExecutiveDashboard } from "./AdminExecutiveDashboard";
 
 interface TradeDashboardProps {
   onOpenAuth?: (role: "buyer" | "supplier", mode: "login" | "register") => void;
@@ -288,12 +289,15 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
             title="Authenticate as a different organization or persona"
           >
             <ArrowLeftRight className="w-3.5 h-3.5 text-blue-600 dark:text-emerald-400" />
-            <span>Switch Account</span>
           </button>
         </div>
       </div>
 
-      {/* Escrow Financial Metrics Summary Bar */}
+      {role === "ADMIN" ? (
+        <AdminExecutiveDashboard />
+      ) : (
+        <>
+          {/* Escrow Financial Metrics Summary Bar */}
       {summary && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
@@ -336,12 +340,12 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           onClick={() => setActiveTab("disputes")}
           className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
             activeTab === "disputes"
-              ? (role === "ADMIN" ? "bg-purple-600 text-white shadow-md shadow-purple-600/20" : "bg-blue-600 text-white shadow-md shadow-blue-600/20")
+              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
               : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
           )}
         >
           <Gavel className="w-4 h-4" />
-          <span>{role === "ADMIN" ? "Arbitration Court & Disputes" : "Dispute Resolution Hub"}</span>
+          <span>Dispute Resolution Hub</span>
         </button>
 
         <button
@@ -353,7 +357,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           )}
         >
           <FileText className="w-4 h-4" />
-          <span>{role === "ADMIN" ? "All Active Escrow Contracts" : "Active Contracts & Milestones"}</span>
+          <span>Active Contracts & Milestones</span>
         </button>
 
         {role === "BUYER" && (
@@ -367,20 +371,6 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           >
             <Lock className="w-4 h-4" />
             <span>Create & Fund Escrow Deal</span>
-          </button>
-        )}
-
-        {role === "ADMIN" && (
-          <button
-            onClick={() => setActiveTab("ledger")}
-            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
-              activeTab === "ledger"
-                ? "bg-purple-600 text-white shadow-md shadow-purple-600/20"
-                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
-            )}
-          >
-            <Landmark className="w-4 h-4" />
-            <span>Double-Entry Nodal Ledger</span>
           </button>
         )}
 
@@ -645,18 +635,16 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
               <div className="flex items-center gap-2">
-                <Gavel className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                <Gavel className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                  {role === "ADMIN" ? "Court Arbitration & Dispute Tribunal Desk" : "Arbitration & Dispute Resolution Court"}
+                  Arbitration & Dispute Resolution Court
                 </h2>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                {role === "ADMIN" 
-                  ? "As an authorized neutral legal arbiter, review contested milestones, inspect evidentiary logs, and execute binding decrees."
-                  : "All disputes are evaluated by neutral trade lawyers and industry technical inspectors based on invoice terms and uploaded evidence."}
+                All disputes are evaluated by neutral trade lawyers and industry technical inspectors based on invoice terms and uploaded evidence.
               </p>
             </div>
-            <span className="px-3.5 py-1.5 rounded-full bg-purple-100 text-purple-800 dark:bg-purple-500/20 dark:text-purple-300 text-xs font-bold font-mono border border-purple-200 dark:border-purple-500/30 flex items-center gap-1.5 self-start sm:self-auto">
+            <span className="px-3.5 py-1.5 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 text-xs font-bold font-mono border border-blue-200 dark:border-blue-500/30 flex items-center gap-1.5 self-start sm:self-auto">
               <Scale className="w-3.5 h-3.5" />
               RBI & ICA Arbitration Rules 2026
             </span>
@@ -700,19 +688,6 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
                       <span>Claim Amount: <strong className="text-slate-900 dark:text-white font-mono text-sm">₹{d.claim_amount.toLocaleString("en-IN")}</strong></span>
                       <span className="hidden sm:inline">Arbitration SLA: <strong className="text-slate-800 dark:text-slate-200">72 Hours Max</strong></span>
                     </div>
-
-                    {role === "ADMIN" && (
-                      <button
-                        onClick={() => {
-                          setVerdictDispute(d);
-                          setArbitrationModalOpen(true);
-                        }}
-                        className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs flex items-center gap-2 shadow-md shadow-purple-600/20 transition-all cursor-pointer self-end sm:self-auto"
-                      >
-                        <Gavel className="w-3.5 h-3.5" />
-                        <span>Execute Legal Decree</span>
-                      </button>
-                    )}
                   </div>
                 </div>
               ))
@@ -1068,6 +1043,8 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         contract={selectedContract}
         onClose={() => setViewDocModalOpen(false)}
       />
+        </>
+      )}
 
     </div>
   );
