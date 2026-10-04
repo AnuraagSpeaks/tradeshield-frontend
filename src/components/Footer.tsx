@@ -4,7 +4,7 @@ import { LegalDocType } from './LegalModal';
 
 interface FooterProps {
   onOpenLegal: (doc: LegalDocType) => void;
-  onNavigate: (view: 'landing' | 'dashboard') => void;
+  onNavigate: (view: 'landing' | 'dashboard', hash?: string, path?: string) => void;
 }
 
 export const Footer: React.FC<FooterProps> = ({ onOpenLegal, onNavigate }) => {
@@ -43,17 +43,17 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLegal, onNavigate }) => {
             <h4 className="font-bold text-white text-xs uppercase tracking-wider">Platform</h4>
             <ul className="space-y-2">
               <li>
-                <a href="#how-it-works" className="hover:text-emerald-400 transition-colors">How It Works</a>
+                <a href="#how-it-works" onClick={(e) => { e.preventDefault(); onNavigate('landing', '#how-it-works'); }} className="hover:text-emerald-400 transition-colors">How It Works</a>
               </li>
               <li>
-                <a href="#features" className="hover:text-emerald-400 transition-colors">Core Safeguards</a>
+                <a href="#features" onClick={(e) => { e.preventDefault(); onNavigate('landing', '#features'); }} className="hover:text-emerald-400 transition-colors">Core Safeguards</a>
               </li>
               <li>
-                <a href="#pricing" className="hover:text-emerald-400 transition-colors">Pricing Plans</a>
+                <a href="#pricing" onClick={(e) => { e.preventDefault(); onNavigate('landing', '#pricing'); }} className="hover:text-emerald-400 transition-colors">Pricing Plans</a>
               </li>
               <li>
                 <button
-                  onClick={() => onNavigate('dashboard')}
+                  onClick={() => onNavigate('dashboard', undefined, '/dashboard')}
                   className="text-left hover:text-emerald-400 transition-colors cursor-pointer"
                 >
                   Live Escrow Portal
@@ -64,8 +64,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLegal, onNavigate }) => {
                   href="/admin"
                   onClick={(e) => {
                     e.preventDefault();
-                    window.history.pushState({}, "", "/admin");
-                    window.dispatchEvent(new PopStateEvent("popstate"));
+                    onNavigate('dashboard', undefined, '/admin');
                   }}
                   className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-amber-400/90 font-mono text-[11px]"
                 >
@@ -73,7 +72,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLegal, onNavigate }) => {
                 </a>
               </li>
               <li>
-                <a href="#knowledge" className="hover:text-emerald-400 transition-colors">Knowledge Hub</a>
+                <a href="#knowledge" onClick={(e) => { e.preventDefault(); onNavigate('landing', '#knowledge'); }} className="hover:text-emerald-400 transition-colors">Knowledge Hub</a>
               </li>
               <li>
                 <a 

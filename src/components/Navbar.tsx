@@ -6,7 +6,7 @@ import { useAuth } from "../context/AuthContext";
 
 interface NavbarProps {
   currentView: "landing" | "dashboard";
-  onNavigate: (view: "landing" | "dashboard") => void;
+  onNavigate: (view: "landing" | "dashboard", hash?: string, path?: string) => void;
   onOpenRole?: (role: "buyer" | "supplier") => void;
   onOpenLegal?: (doc: LegalDocType) => void;
 }
@@ -18,8 +18,18 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
     if (onOpenRole) {
       onOpenRole(role);
     } else {
-      onNavigate("dashboard");
+      onNavigate("dashboard", undefined, "/dashboard");
     }
+  };
+
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, hash: string) => {
+    e.preventDefault();
+    onNavigate("landing", hash);
+  };
+
+  const handleLogout = () => {
+    logout();
+    onNavigate("landing", "#home", "/");
   };
 
   return (
@@ -29,19 +39,19 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
         {/* Brand Logo */}
         <div 
           className="flex items-center gap-3 cursor-pointer group shrink-0"
-          onClick={() => onNavigate("landing")}
+          onClick={() => onNavigate("landing", "#home", "/")}
         >
           <img src="/logo.svg" alt="PayShieldX Logo" className="h-9 w-auto" />
         </div>
 
         {/* Desktop Navigation Links */}
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600 dark:text-slate-300">
-          <a href="#home" onClick={() => onNavigate("landing")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">Home</a>
-          <a href="#how-it-works" onClick={() => onNavigate("landing")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">How It Works</a>
-          <a href="#features" onClick={() => onNavigate("landing")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">Features</a>
-          <a href="#pricing" onClick={() => onNavigate("landing")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">Pricing</a>
-          <a href="#knowledge" onClick={() => onNavigate("landing")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">Knowledge Hub</a>
-          <a href="#contact" onClick={() => onNavigate("landing")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">Contact</a>
+          <a href="#home" onClick={(e) => handleNavClick(e, "#home")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">Home</a>
+          <a href="#how-it-works" onClick={(e) => handleNavClick(e, "#how-it-works")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">How It Works</a>
+          <a href="#features" onClick={(e) => handleNavClick(e, "#features")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">Features</a>
+          <a href="#pricing" onClick={(e) => handleNavClick(e, "#pricing")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">Pricing</a>
+          <a href="#knowledge" onClick={(e) => handleNavClick(e, "#knowledge")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">Knowledge Hub</a>
+          <a href="#contact" onClick={(e) => handleNavClick(e, "#contact")} className="hover:text-blue-600 dark:hover:text-emerald-400 transition-colors">Contact</a>
         </nav>
 
         {/* Action Buttons: Theme Toggle, Authenticated Session or Buyer & Supplier Portals */}
@@ -52,7 +62,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
           {isAuthenticated && user ? (
             <div className="flex items-center gap-2">
               <div 
-                onClick={() => onNavigate("dashboard")}
+                onClick={() => onNavigate("dashboard", undefined, user.role === "admin" ? "/admin" : "/dashboard")}
                 className="hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs cursor-pointer hover:border-blue-500 transition-all"
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
@@ -68,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
 
               {currentView === "landing" ? (
                 <button
-                  onClick={() => onNavigate("dashboard")}
+                  onClick={() => onNavigate("dashboard", undefined, user.role === "admin" ? "/admin" : "/dashboard")}
                   className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-emerald-500 dark:to-teal-500 hover:from-blue-500 hover:to-indigo-500 text-white dark:text-slate-950 text-xs font-extrabold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
                 >
                   <Briefcase className="w-3.5 h-3.5" />
@@ -76,7 +86,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
                 </button>
               ) : (
                 <button
-                  onClick={() => onNavigate("landing")}
+                  onClick={() => onNavigate("landing", "#home", "/")}
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition-all cursor-pointer"
                 >
                   <Layers className="w-3.5 h-3.5 text-blue-600 dark:text-emerald-400" />
@@ -85,7 +95,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
               )}
 
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 title="Sign Out"
                 className="p-2 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 dark:bg-slate-900 dark:hover:bg-rose-950/40 dark:text-slate-400 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-800 transition-colors cursor-pointer"
               >
@@ -113,7 +123,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
               </>
             ) : (
               <button
-                onClick={() => onNavigate("landing")}
+                onClick={() => onNavigate("landing", "#home", "/")}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-900 dark:hover:bg-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-semibold transition-all cursor-pointer"
               >
                 <Layers className="w-4 h-4 text-blue-600 dark:text-emerald-400" />

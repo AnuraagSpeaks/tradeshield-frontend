@@ -27,11 +27,40 @@ const AppContent: React.FC = () => {
   const [authRole, setAuthRole] = useState<"buyer" | "supplier">("buyer");
   const [authMode, setAuthMode] = useState<"register" | "login">("login");
 
-  // Direct /admin and /arbiter URL routing
+  // Unified Navigation & URL state sync
+  const navigateTo = (view: "landing" | "dashboard", hash?: string, path?: string) => {
+    if (view === "landing") {
+      setCurrentView("landing");
+      const targetUrl = hash && hash !== "#home" && hash !== "#" ? `/${hash}` : "/";
+      window.history.pushState({}, "", targetUrl);
+      if (hash && hash !== "#home" && hash !== "#") {
+        const id = hash.replace("#", "");
+        setTimeout(() => {
+          const el = document.getElementById(id);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth" });
+          }
+        }, 60);
+      } else {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
+    } else {
+      if (path === "/admin" && (!user || user.role !== "admin")) {
+        demoLogin("admin");
+      }
+      setCurrentView("dashboard");
+      const targetPath = path || (user?.role === "admin" ? "/admin" : "/dashboard");
+      window.history.pushState({}, "", targetPath);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
+
+  // Direct /admin, /dashboard, and URL popstate routing
   React.useEffect(() => {
-    const checkAdminPath = () => {
+    const handleUrlRouting = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
+
       if (
         path.startsWith("/admin") || 
         path.startsWith("/arbiter") || 
@@ -43,13 +72,26 @@ const AppContent: React.FC = () => {
           demoLogin("admin");
         }
         setCurrentView("dashboard");
+      } else if (path.startsWith("/dashboard") || path.startsWith("/portal")) {
+        setCurrentView("dashboard");
+      } else {
+        setCurrentView("landing");
+        if (hash) {
+          const id = hash.replace("#", "");
+          setTimeout(() => {
+            const el = document.getElementById(id);
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth" });
+            }
+          }, 100);
+        }
       }
     };
 
-    checkAdminPath();
-    window.addEventListener("popstate", checkAdminPath);
-    return () => window.removeEventListener("popstate", checkAdminPath);
-  }, [user]);
+    handleUrlRouting();
+    window.addEventListener("popstate", handleUrlRouting);
+    return () => window.removeEventListener("popstate", handleUrlRouting);
+  }, []);
 
   const openLegalDoc = (doc: LegalDocType) => {
     setActiveLegalDoc(doc);
@@ -64,8 +106,7 @@ const AppContent: React.FC = () => {
         setAuthModalOpen(true);
         return;
       }
-      setCurrentView("dashboard");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      navigateTo("dashboard");
     } else {
       setAuthRole(role);
       setAuthMode("login");
@@ -75,8 +116,7 @@ const AppContent: React.FC = () => {
 
   const handleOpenDashboardDirect = () => {
     if (isAuthenticated && user) {
-      setCurrentView("dashboard");
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      navigateTo("dashboard");
     } else {
       setAuthRole("buyer");
       setAuthMode("login");
@@ -85,15 +125,14 @@ const AppContent: React.FC = () => {
   };
 
   const handleAuthSuccess = () => {
-    setCurrentView("dashboard");
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    navigateTo("dashboard");
   };
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 flex flex-col font-sans transition-colors duration-300 selection:bg-blue-500 selection:text-white dark:selection:bg-emerald-500 dark:selection:text-slate-950">
       <Navbar
         currentView={currentView}
-        onNavigate={setCurrentView}
+        onNavigate={navigateTo}
         onOpenRole={handleRoleSelect}
         onOpenLegal={openLegalDoc}
       />
@@ -131,10 +170,7 @@ const AppContent: React.FC = () => {
 
       <Footer
         onOpenLegal={openLegalDoc}
-        onNavigate={(view) => {
-          setCurrentView(view);
-          window.scrollTo({ top: 0, behavior: "smooth" });
-        }}
+        onNavigate={navigateTo}
       />
 
       <LegalModal
