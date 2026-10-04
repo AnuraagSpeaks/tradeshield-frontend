@@ -388,7 +388,9 @@ export const AdminExecutiveDashboard: React.FC = () => {
                   <Award className="w-4 h-4 text-indigo-500" />
                 </div>
                 <div className="text-2xl sm:text-3xl font-black font-mono text-indigo-600 dark:text-indigo-400">
-                  ₹{(stats.membership_revenue / 100000).toFixed(2)} Lakh
+                  {stats.membership_revenue >= 100000 
+                    ? `₹${(stats.membership_revenue / 100000).toFixed(2)} Lakh` 
+                    : `₹${stats.membership_revenue.toLocaleString("en-IN")}`}
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 font-mono">Growth, Business & Enterprise</p>
               </div>
@@ -400,7 +402,9 @@ export const AdminExecutiveDashboard: React.FC = () => {
                   <Clock className="w-4 h-4 text-amber-500" />
                 </div>
                 <div className="text-2xl sm:text-3xl font-black font-mono text-amber-600 dark:text-amber-400">
-                  ₹{(stats.pending_settlements / 100000).toFixed(2)} Lakh
+                  {stats.pending_settlements >= 100000
+                    ? `₹${(stats.pending_settlements / 100000).toFixed(2)} Lakh`
+                    : `₹${stats.pending_settlements.toLocaleString("en-IN")}`}
                 </div>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">QC Approved Disbursals Queue</p>
               </div>
@@ -1011,15 +1015,15 @@ export const AdminExecutiveDashboard: React.FC = () => {
               </div>
               <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 text-xs font-mono">
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Growth Tier (₹599/mo):</span>
+                  <span>Growth Tier ({finance.growth_count ?? 1} active × ₹599/mo):</span>
                   <span className="font-bold text-slate-900 dark:text-white">₹{finance.membership_growth.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Business Tier (₹1,499/mo):</span>
+                  <span>Business Tier ({finance.business_count ?? 2} active × ₹1,499/mo):</span>
                   <span className="font-bold text-slate-900 dark:text-white">₹{finance.membership_business.toLocaleString("en-IN")}</span>
                 </div>
                 <div className="flex justify-between text-slate-600 dark:text-slate-400">
-                  <span>Enterprise Tier (₹2,499/mo):</span>
+                  <span>Enterprise Tier ({finance.enterprise_count ?? 1} active × ₹2,499/mo):</span>
                   <span className="font-bold text-slate-900 dark:text-white">₹{finance.membership_enterprise.toLocaleString("en-IN")}</span>
                 </div>
               </div>

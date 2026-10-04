@@ -249,6 +249,9 @@ export interface AdminFinanceStats {
   membership_growth: number;
   membership_business: number;
   membership_enterprise: number;
+  growth_count?: number;
+  business_count?: number;
+  enterprise_count?: number;
   other_revenue: number;
   total_revenue: number;
   escrow_nodal_balance: number;
