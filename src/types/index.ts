@@ -60,23 +60,43 @@ export interface Contract {
 
 export interface Proposal {
   id: string;
+  proposal_number?: string;
   order_id: string;
   buyer_id: string;
   buyer_name?: string;
+  buyer_signatory?: string;
+  buyer_email?: string;
+  buyer_gstin?: string;
+  buyer_address?: string;
   supplier_id: string;
   supplier_name?: string;
+  supplier_signatory?: string;
+  supplier_email?: string;
+  supplier_gstin?: string;
+  supplier_address?: string;
+  item_description?: string;
+  base_amount?: number;
+  discount_percent?: number;
+  discount_amount?: number;
+  tax_percent?: number;
+  tax_amount?: number;
+  total_payable_amount?: number;
   amount: number;
   currency: string;
-  terms: "full" | "partial" | "advance";
+  terms: string;
+  milestones_summary?: string;
   delivery_timeline: string;
   notes: string;
-  status: "Draft" | "Approved by Supplier" | "Approved by Buyer" | "Confirmed" | "Modification Requested" | "Disputed";
-  payment_status: "Unpaid" | "Payment Held in Escrow" | "Shipped" | "Delivered" | "Payment Released" | "Dispute Raised";
+  status: string;
+  payment_status: string;
   buyer_approved?: boolean;
   supplier_approved?: boolean;
+  contract_id?: string;
   lr_number?: string;
   transporter_name?: string;
   proof_url?: string;
+  valid_till_date?: string;
+  approved_at?: string;
   created_at: string;
   updated_at: string;
 }

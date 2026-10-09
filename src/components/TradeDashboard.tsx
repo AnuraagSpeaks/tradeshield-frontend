@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Contract, Milestone, Dispute, EscrowSummary } from "../types";
+import { Contract, Milestone, Dispute, EscrowSummary, Proposal } from "../types";
 import { 
   fetchContracts, 
   fetchEscrowSummary, 
@@ -7,10 +7,13 @@ import {
   submitMilestoneProof, 
   approveMilestone, 
   raiseDispute, 
-  fetchDisputes,
-  arbitrateDispute,
-  fetchLedgerJournals,
-  verifyGSTIN 
+  fetchDisputes, 
+  arbitrateDispute, 
+  fetchLedgerJournals, 
+  verifyGSTIN,
+  fetchProposals,
+  createProposal,
+  approveProposal
 } from "../api/client";
 import { 
   RefreshCw, 
@@ -25,19 +28,25 @@ import {
   ArrowUpRight, 
   Landmark, 
   Truck, 
-  FileCheck,
-  X,
-  UserCheck,
-  ArrowLeftRight,
-  LogOut,
-  Scale,
-  Gavel,
-  Award,
-  DollarSign
+  FileCheck, 
+  X, 
+  UserCheck, 
+  ArrowLeftRight, 
+  LogOut, 
+  Scale, 
+  Gavel, 
+  Award, 
+  DollarSign,
+  Inbox,
+  PlusCircle,
+  Eye,
+  Printer,
+  Sparkles
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { DocumentViewerModal } from "./DocumentViewerModal";
+import { ProposalViewerModal } from "./ProposalViewerModal";
 import { AdminExecutiveDashboard } from "./AdminExecutiveDashboard";
 
 interface TradeDashboardProps {
@@ -68,19 +77,32 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   const role: "BUYER" | "SUPPLIER" | "ADMIN" = isAdmin ? "ADMIN" : isSupplier ? "SUPPLIER" : "BUYER";
 
   const [contracts, setContracts] = useState<Contract[]>([]);
+  const [proposals, setProposals] = useState<Proposal[]>([]);
   const [summary, setSummary] = useState<EscrowSummary | null>(null);
   const [selectedContract, setSelectedContract] = useState<Contract | null>(null);
+  const [selectedProposal, setSelectedProposal] = useState<Proposal | null>(null);
+  const [proposalModalOpen, setProposalModalOpen] = useState(false);
+  const [actionSuccessMsg, setActionSuccessMsg] = useState<string>("");
+
   // Active Tab & Navigation
-  const [activeTab, setActiveTab] = useState<"contracts" | "new_deal" | "disputes" | "kyc" | "ledger">(
-    isAdmin ? "disputes" : "contracts"
+  const [activeTab, setActiveTab] = useState<"proposals" | "contracts" | "new_deal" | "disputes" | "kyc" | "ledger">(
+    isAdmin ? "disputes" : !isSupplier ? "proposals" : "contracts"
   );
   const [loading, setLoading] = useState<boolean>(true);
 
-  // New Deal Form State (Buyer)
-  const [newTitle, setNewTitle] = useState("");
-  const [newAmount, setNewAmount] = useState<number>(1500000);
-  const [newBuyerGST, setNewBuyerGST] = useState("27AAACA1234A1Z5");
-  const [newSupplierGST, setNewSupplierGST] = useState("24AAACB5678B1Z2");
+  // Supplier Proposal Form State
+  const [propBuyerName, setPropBuyerName] = useState("Apex Auto Components Pvt Ltd");
+  const [propBuyerSignatory, setPropBuyerSignatory] = useState("Vikram Malhotra");
+  const [propBuyerEmail, setPropBuyerEmail] = useState("procurement@apexauto.in");
+  const [propBuyerGSTIN, setPropBuyerGSTIN] = useState("27AAACA1234A1Z5");
+  const [propBuyerAddress, setPropBuyerAddress] = useState("Plot 42, MIDC Bhosari Industrial Area, Pune, Maharashtra 411026");
+  const [propItemDesc, setPropItemDesc] = useState("Supply of 10,000 Precision Cast Flanges (Grade ASTM A105) & Hydrostatic Testing");
+  const [propBaseAmount, setPropBaseAmount] = useState<number>(250000);
+  const [propDiscountPct, setPropDiscountPct] = useState<number>(20);
+  const [propTaxPct, setPropTaxPct] = useState<number>(18);
+  const [propMilestonesSum, setPropMilestonesSum] = useState("20% Advance (QC Mill Cert) • 40% Dispatch (LR Proof) • 40% Delivery (Warehouse Signoff)");
+  const [propDeliveryTimeline, setPropDeliveryTimeline] = useState("21 Business Days");
+  const [propSpecialTerms, setPropSpecialTerms] = useState("100% Escrow Protected Trade Deal via PayShieldX Nodal Trust Account. 48hr inspection window.");
 
   // Submit Proof Form State (Supplier)
   const [proofModalOpen, setProofModalOpen] = useState(false);
@@ -113,16 +135,18 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
 
   const loadData = async () => {
     setLoading(true);
-    const [cData, sData, dData, jData] = await Promise.all([
+    const [cData, sData, dData, jData, pData] = await Promise.all([
       fetchContracts(), 
       fetchEscrowSummary(),
       fetchDisputes(),
-      fetchLedgerJournals()
+      fetchLedgerJournals(),
+      fetchProposals()
     ]);
     setContracts(cData);
     setSummary(sData);
     setDisputesList(dData);
     setJournals(jData);
+    setProposals(pData);
     if (cData.length > 0) {
       setSelectedContract(cData[0]);
     }
@@ -135,8 +159,9 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
 
   const handleApproveMilestone = async (mId: string) => {
     await approveMilestone(mId);
-    alert("Milestone approved! Funds released from Escrow Vault to Supplier bank account.");
+    setActionSuccessMsg("✅ Milestone approved! Funds released from Escrow Vault to Supplier bank account.");
     loadData();
+    setTimeout(() => setActionSuccessMsg(""), 5000);
   };
 
   const handleSubmitProof = async (e: React.FormEvent) => {
@@ -145,59 +170,53 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
     const fullNotes = transporterName + " (LR #" + lrNumber + "): " + dispatchNotes;
     await submitMilestoneProof(proofMilestone.id, proofUrl, fullNotes);
     setProofModalOpen(false);
-    alert("Proof of Dispatch & Lorry Receipt submitted! Buyer notified for inspection sign-off.");
+    setActionSuccessMsg("🚚 Proof of Dispatch & Lorry Receipt submitted! Buyer notified for inspection sign-off.");
     loadData();
+    setTimeout(() => setActionSuccessMsg(""), 5000);
   };
 
-  const handleCreateDeal = async (e: React.FormEvent) => {
+  const handleCreateProposalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createContract({
-      title: newTitle || "Supply of High Grade Steel Components",
-      total_amount: newAmount,
-      buyer_org_id: "org_buyer_01",
-      supplier_org_id: "org_seller_01",
-      description: "Smart escrow deal with milestone tranches",
-      delivery_terms: "DAP Destination",
-      inspection_period_days: 5,
-      milestones: [
-        {
-          id: "m_new_1",
-          contract_id: "",
-          sequence: 1,
-          title: "20% Mobilization Advance",
-          description: "Raw material procurement with Mill Test Cert",
-          percentage: 20,
-          amount: newAmount * 0.2,
-          status: "FUNDED",
-          due_date: new Date(Date.now() + 7 * 86400000).toISOString(),
-        },
-        {
-          id: "m_new_2",
-          contract_id: "",
-          sequence: 2,
-          title: "40% On Dispatch with LR",
-          description: "Consignment dispatched via Transporter",
-          percentage: 40,
-          amount: newAmount * 0.4,
-          status: "FUNDED",
-          due_date: new Date(Date.now() + 14 * 86400000).toISOString(),
-        },
-        {
-          id: "m_new_3",
-          contract_id: "",
-          sequence: 3,
-          title: "40% Final QC Acceptance",
-          description: "Warehouse receiving and dimensional inspection",
-          percentage: 40,
-          amount: newAmount * 0.4,
-          status: "FUNDED",
-          due_date: new Date(Date.now() + 21 * 86400000).toISOString(),
-        },
-      ],
+    const created = await createProposal({
+      buyer_name: propBuyerName,
+      buyer_signatory: propBuyerSignatory,
+      buyer_email: propBuyerEmail,
+      buyer_gstin: propBuyerGSTIN,
+      buyer_address: propBuyerAddress,
+      supplier_name: user?.business_name || "Bharat Precision Castings Ltd",
+      supplier_signatory: user?.contact_person || user?.full_name || "Rajesh Singhania",
+      supplier_email: user?.email || "sales@bharatcastings.com",
+      supplier_gstin: user?.gst || "24AABCB5678B1Z2",
+      supplier_address: user ? `${user.business_name}, ${user.city || "Vadodara"}, India` : "Survey No. 118, GIDC Makarpura Industrial Estate, Vadodara, Gujarat 390010",
+      item_description: propItemDesc,
+      base_amount: propBaseAmount,
+      discount_percent: propDiscountPct,
+      tax_percent: propTaxPct,
+      milestones_summary: propMilestonesSum,
+      delivery_timeline: propDeliveryTimeline,
+      terms: propSpecialTerms,
+      notes: "Auto-generated official Trade Deal Proposal with PayShieldX Escrow Protection",
     });
-    alert("Deal created and funded into Escrow Vault successfully!");
-    setActiveTab("contracts");
-    loadData();
+
+    if (created) {
+      setActionSuccessMsg(`✅ Proposal #${created.proposal_number || created.id} successfully created & Acknowledgement Email dispatched to ${propBuyerEmail || "Buyer"}!`);
+      setSelectedProposal(created);
+      setProposalModalOpen(true);
+      await loadData();
+      setActiveTab("contracts");
+      setTimeout(() => setActionSuccessMsg(""), 7000);
+    }
+  };
+
+  const handleApproveProposal = async (proposalId: string) => {
+    const success = await approveProposal(proposalId, "buyer");
+    if (success) {
+      setProposalModalOpen(false);
+      setActionSuccessMsg("🛡️ Proposal Approved & Escrow Funds Locked! Deal converted into an Active Escrow Contract.");
+      await loadData();
+      setActiveTab("contracts");
+      setTimeout(() => setActionSuccessMsg(""), 7000);
+    }
   };
 
   const handleRaiseDispute = async () => {
@@ -334,8 +353,73 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         </div>
       )}
 
+      {/* Success Notification Alert Banner */}
+      {actionSuccessMsg && (
+        <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-500/40 text-emerald-800 dark:text-emerald-300 text-xs font-bold flex items-center justify-between shadow-md">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+            <span>{actionSuccessMsg}</span>
+          </div>
+          <button onClick={() => setActionSuccessMsg("")} className="text-emerald-600 dark:text-emerald-400 hover:text-emerald-900 cursor-pointer">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Tab Navigation */}
       <div className="flex items-center gap-2 overflow-x-auto pb-2 border-b border-slate-200 dark:border-slate-800 no-scrollbar">
+        {/* Buyer: Incoming Deals & Proposals Tab */}
+        {role === "BUYER" && (
+          <button
+            onClick={() => setActiveTab("proposals")}
+            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+              activeTab === "proposals"
+                ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
+            )}
+          >
+            <Inbox className="w-4 h-4" />
+            <span>Incoming Deals & Proposals</span>
+            {proposals.filter(p => !p.buyer_approved && p.status !== "APPROVED").length > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black">
+                {proposals.filter(p => !p.buyer_approved && p.status !== "APPROVED").length}
+              </span>
+            )}
+          </button>
+        )}
+
+        {/* Both: Active Contracts Tab */}
+        <button
+          onClick={() => setActiveTab("contracts")}
+          className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+            activeTab === "contracts"
+              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
+          )}
+        >
+          <FileText className="w-4 h-4" />
+          <span>Active Contracts & Milestones</span>
+          <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
+            {contracts.length}
+          </span>
+        </button>
+
+        {/* Supplier: Create Proposal Tab (EXCLUSIVELY FOR SUPPLIER) */}
+        {role === "SUPPLIER" && (
+          <button
+            onClick={() => setActiveTab("new_deal")}
+            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+              activeTab === "new_deal"
+                ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
+            )}
+          >
+            <PlusCircle className="w-4 h-4 text-emerald-400" />
+            <span>+ Create Trade Proposal</span>
+          </button>
+        )}
+
+        {/* Both: Disputes */}
         <button
           onClick={() => setActiveTab("disputes")}
           className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
@@ -348,32 +432,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           <span>Dispute Resolution Hub</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab("contracts")}
-          className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
-            activeTab === "contracts"
-              ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-              : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
-          )}
-        >
-          <FileText className="w-4 h-4" />
-          <span>Active Contracts & Milestones</span>
-        </button>
-
-        {role === "BUYER" && (
-          <button
-            onClick={() => setActiveTab("new_deal")}
-            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
-              activeTab === "new_deal"
-                ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
-                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
-            )}
-          >
-            <Lock className="w-4 h-4" />
-            <span>Create & Fund Escrow Deal</span>
-          </button>
-        )}
-
+        {/* Both: GSTIN & Bank Verifier */}
         <button
           onClick={() => setActiveTab("kyc")}
           className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
@@ -558,72 +617,317 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         </div>
       )}
 
-      {/* New Deal Creation Tab (Buyer) */}
+      {/* ======================================================== */}
+      {/* 1. BUYER INCOMING PROPOSALS TAB (Review & One-Click Approve) */}
+      {/* ======================================================== */}
+      {activeTab === "proposals" && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <Inbox className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                <span>Incoming Trade Deals & Supplier Proposals ({proposals.length})</span>
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                Suppliers have issued these digital proposals for your purchase orders. Review terms, inspect IndiaMART-style proposal PDFs, and approve to lock funds into Escrow.
+              </p>
+            </div>
+            <span className="px-3 py-1 rounded-full text-xs font-mono font-bold bg-blue-100 text-blue-800 dark:bg-blue-500/20 dark:text-blue-300 border border-blue-200 dark:border-blue-500/30">
+              100% Nodal Escrow Protection
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {proposals.map((p) => {
+              const isApproved = p.buyer_approved || p.status === "APPROVED" || p.status === "Confirmed";
+              const baseAmt = p.base_amount || (p.amount > 0 ? p.amount / 1.18 : 250000);
+              const discAmt = p.discount_amount || 0;
+              const dealAmt = baseAmt - discAmt;
+              const taxAmt = p.tax_amount || (dealAmt * 0.18);
+              const totalPayable = p.total_payable_amount || p.amount;
+
+              return (
+                <div
+                  key={p.id}
+                  className={"p-6 rounded-3xl border transition-all space-y-5 bg-white dark:bg-slate-900 shadow-sm " + (
+                    isApproved
+                      ? "border-emerald-200 dark:border-emerald-500/30"
+                      : "border-slate-200 dark:border-slate-800 hover:border-blue-400 dark:hover:border-blue-500"
+                  )}
+                >
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between">
+                    <div className="space-y-0.5">
+                      <span className="text-xs font-mono font-black text-blue-600 dark:text-blue-400">
+                        PROPOSAL #{p.proposal_number || p.id}
+                      </span>
+                      <p className="text-[11px] text-slate-400">
+                        Issued: {p.created_at ? new Date(p.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "Recent"}
+                      </p>
+                    </div>
+
+                    <span className={`px-2.5 py-1 rounded-full text-[11px] font-bold font-mono ${
+                      isApproved 
+                        ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-500/30" 
+                        : "bg-amber-100 text-amber-800 dark:bg-amber-500/20 dark:text-amber-300 border border-amber-300 dark:border-amber-500/30"
+                    }`}>
+                      {isApproved ? "✓ APPROVED & FUNDED" : "⏳ AWAITING YOUR ACCEPTANCE"}
+                    </span>
+                  </div>
+
+                  {/* Supplier & Deal Description */}
+                  <div className="space-y-2">
+                    <div>
+                      <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider block">Supplier Organization</span>
+                      <p className="font-bold text-sm text-slate-900 dark:text-white flex items-center gap-1.5">
+                        <Building2 className="w-4 h-4 text-slate-400" />
+                        {p.supplier_name || "Bharat Precision Castings Ltd"}
+                        {p.supplier_gstin && <span className="text-xs font-mono text-slate-500 font-normal">({p.supplier_gstin})</span>}
+                      </p>
+                    </div>
+
+                    <div>
+                      <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider block">Goods / Deliverables</span>
+                      <p className="text-xs font-medium text-slate-800 dark:text-slate-200 line-clamp-2">
+                        {p.item_description || "Supply of precision engineered components"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Milestones Structure Pill */}
+                  <div className="p-3 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs space-y-1">
+                    <span className="text-[10px] font-bold font-mono uppercase text-slate-500">Escrow Tranche Milestones:</span>
+                    <p className="text-[11px] text-slate-700 dark:text-slate-300 font-mono">
+                      {p.milestones_summary || "20% Advance (QC Cert) • 40% Dispatch (LR Proof) • 40% Delivery (Warehouse)"}
+                    </p>
+                  </div>
+
+                  {/* Pricing Matrix Breakdown */}
+                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1 text-xs">
+                    <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                      <span>Base Quotation Price:</span>
+                      <span className="font-mono">₹{baseAmt.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                    </div>
+                    {p.discount_percent && p.discount_percent > 0 ? (
+                      <div className="flex justify-between text-red-500">
+                        <span>Discount ({p.discount_percent}%):</span>
+                        <span className="font-mono">(-)₹{discAmt.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                      </div>
+                    ) : null}
+                    <div className="flex justify-between text-slate-500 dark:text-slate-400">
+                      <span>GST (18% IGST):</span>
+                      <span className="font-mono">+₹{taxAmt.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                    </div>
+                    <div className="flex justify-between text-sm font-black text-slate-900 dark:text-white pt-1 border-t border-dashed border-slate-200 dark:border-slate-800">
+                      <span>Total Payable Amount:</span>
+                      <span className="font-mono text-emerald-600 dark:text-emerald-400">
+                        ₹{totalPayable.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center gap-3 pt-2">
+                    <button
+                      onClick={() => {
+                        setSelectedProposal(p);
+                        setProposalModalOpen(true);
+                      }}
+                      className="flex-1 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer border border-slate-200 dark:border-slate-700"
+                    >
+                      <Eye className="w-3.5 h-3.5" />
+                      <span>View Proposal (PDF)</span>
+                    </button>
+
+                    {!isApproved && (
+                      <button
+                        onClick={() => handleApproveProposal(p.id)}
+                        className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-blue-600/20 cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>Approve & Fund Escrow</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ======================================================== */}
+      {/* 2. SUPPLIER PROPOSAL CREATION TAB (Exclusive to Supplier) */}
+      {/* ======================================================== */}
       {activeTab === "new_deal" && (
-        <div className="max-w-2xl mx-auto p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-6">
+        <div className="max-w-3xl mx-auto p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-6">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Create New Escrow-Protected Trade Deal</h2>
+            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+              <PlusCircle className="w-6 h-6" />
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white">Create Official Trade Deal Proposal</h2>
+            </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Terms are locked into a digital proposal with automated 3-stage milestone escrow releases.
+              Issue an Escrow-Protected Sales Proposal to your Buyer. Once created, the Buyer automatically receives an official <strong>Acknowledgement for Proposal</strong> email with a link to inspect the IndiaMART-style Proposal PDF and approve payment into Escrow.
             </p>
           </div>
 
-          <form onSubmit={handleCreateDeal} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Deal Title / Goods Description</label>
-              <input
-                type="text"
-                required
-                placeholder="E.g., Supply of 10,000 Precision Cast Flanges"
-                value={newTitle}
-                onChange={(e) => setNewTitle(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:border-blue-500 focus:outline-none"
-              />
-            </div>
+          <form onSubmit={handleCreateProposalSubmit} className="space-y-5">
+            
+            {/* Buyer Selection & Details */}
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-3">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-500 font-mono block">Buyer Details</span>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Buyer Business Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={propBuyerName}
+                    onChange={(e) => setPropBuyerName(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none font-semibold"
+                  />
+                </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Total Deal Amount (INR)</label>
-                <input
-                  type="number"
-                  required
-                  min={10000}
-                  value={newAmount}
-                  onChange={(e) => setNewAmount(Number(e.target.value))}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:border-blue-500 focus:outline-none"
-                />
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Buyer Signatory / Contact Person</label>
+                  <input
+                    type="text"
+                    required
+                    value={propBuyerSignatory}
+                    onChange={(e) => setPropBuyerSignatory(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Buyer GSTIN</label>
+                  <input
+                    type="text"
+                    required
+                    value={propBuyerGSTIN}
+                    onChange={(e) => setPropBuyerGSTIN(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white font-mono uppercase focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Buyer Email Address (For Proposal Email)</label>
+                  <input
+                    type="email"
+                    required
+                    value={propBuyerEmail}
+                    onChange={(e) => setPropBuyerEmail(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
+                  />
+                </div>
               </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Supplier GSTIN</label>
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-400">Buyer Delivery / Billing Address</label>
                 <input
                   type="text"
                   required
-                  value={newSupplierGST}
-                  onChange={(e) => setNewSupplierGST(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:border-blue-500 focus:outline-none"
+                  value={propBuyerAddress}
+                  onChange={(e) => setPropBuyerAddress(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-white focus:border-blue-500 focus:outline-none"
                 />
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-500/30 text-xs space-y-2">
-              <div className="flex items-center justify-between font-bold text-blue-900 dark:text-blue-300">
-                <span>Automated 3-Tranche Milestone Setup:</span>
-                <span>100% Escrow Backed</span>
+            {/* Goods Description */}
+            <div className="space-y-1.5">
+              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Goods Description & Scope of Supply</label>
+              <textarea
+                rows={2}
+                required
+                value={propItemDesc}
+                onChange={(e) => setPropItemDesc(e.target.value)}
+                className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:border-blue-500 focus:outline-none resize-none"
+              />
+            </div>
+
+            {/* Financial Pricing & Tax Matrix */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Base Deal Amount (INR)</label>
+                <input
+                  type="number"
+                  required
+                  min={1000}
+                  value={propBaseAmount}
+                  onChange={(e) => setPropBaseAmount(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:border-blue-500 focus:outline-none"
+                />
               </div>
-              <ul className="space-y-1 text-slate-600 dark:text-slate-400 text-[11px]">
-                <li>• 20% Advance: Released upon Raw Material QC / Mill Certificate</li>
-                <li>• 40% Dispatch: Released upon Transporter Lorry Receipt (LR) submission</li>
-                <li>• 40% Delivery: Released upon destination warehouse physical inspection</li>
-              </ul>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Discount (%)</label>
+                <input
+                  type="number"
+                  min={0}
+                  max={100}
+                  value={propDiscountPct}
+                  onChange={(e) => setPropDiscountPct(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">GST Rate (%)</label>
+                <input
+                  type="number"
+                  value={propTaxPct}
+                  onChange={(e) => setPropTaxPct(Number(e.target.value))}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+            </div>
+
+            {/* Calculated Payable Preview Box */}
+            <div className="p-4 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-xs flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+              <div className="space-y-0.5">
+                <span className="font-bold text-emerald-900 dark:text-emerald-300">Payable Total with 18% GST:</span>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                  Base: ₹{propBaseAmount.toLocaleString("en-IN")} • Discount: {propDiscountPct}% • GST @ 18%
+                </p>
+              </div>
+              <div className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
+                ₹{((propBaseAmount * (1 - propDiscountPct / 100)) * 1.18).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+              </div>
+            </div>
+
+            {/* Milestone & Timeline Setup */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Milestone Tranche Structure</label>
+                <input
+                  type="text"
+                  required
+                  value={propMilestonesSum}
+                  onChange={(e) => setPropMilestonesSum(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:border-blue-500 focus:outline-none font-mono"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Delivery Timeline</label>
+                <input
+                  type="text"
+                  required
+                  value={propDeliveryTimeline}
+                  onChange={(e) => setPropDeliveryTimeline(e.target.value)}
+                  className="w-full px-4 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white text-xs focus:border-blue-500 focus:outline-none"
+                />
+              </div>
             </div>
 
             <button
               type="submit"
-              className="w-full py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg shadow-blue-600/20 transition-all cursor-pointer"
+              className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm flex items-center justify-center gap-2 shadow-xl shadow-emerald-600/20 transition-all cursor-pointer"
             >
-              <Lock className="w-4 h-4" />
-              <span>Lock Deal in Escrow Nodal Account</span>
+              <Sparkles className="w-4 h-4" />
+              <span>Generate Proposal PDF & Dispatch Email to Buyer</span>
             </button>
           </form>
         </div>
@@ -1042,6 +1346,15 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         milestone={viewDocMilestone}
         contract={selectedContract}
         onClose={() => setViewDocModalOpen(false)}
+      />
+
+      {/* IndiaMART-style Proposal Viewer Modal */}
+      <ProposalViewerModal
+        isOpen={proposalModalOpen}
+        proposal={selectedProposal}
+        onClose={() => setProposalModalOpen(false)}
+        onApprove={handleApproveProposal}
+        isBuyer={role === "BUYER"}
       />
         </>
       )}
