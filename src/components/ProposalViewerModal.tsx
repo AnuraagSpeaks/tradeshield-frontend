@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Proposal } from "../types";
 import { X, Printer, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { printElement } from "../utils/printHelper";
 
 interface ProposalViewerModalProps {
   proposal: Proposal | null;
@@ -17,6 +18,8 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
   onApprove,
   isBuyer = false,
 }) => {
+  const printAreaRef = useRef<HTMLDivElement>(null);
+
   if (!isOpen || !proposal) return null;
 
   const baseAmt = proposal.base_amount || (proposal.amount > 0 ? proposal.amount / 1.18 : 250000);
@@ -33,7 +36,11 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
   const approvedDate = proposal.approved_at ? new Date(proposal.approved_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : isApproved ? propDate : "Pending Acceptance";
 
   const handlePrint = () => {
-    window.print();
+    if (printAreaRef.current) {
+      printElement(printAreaRef.current, `Proposal #${proposal.proposal_number || proposal.id} - PayShieldX`);
+    } else {
+      window.print();
+    }
   };
 
   return (
@@ -80,7 +87,7 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
         </div>
 
         {/* Printable Proposal Document Body */}
-        <div className="print-sheet p-8 sm:p-12 relative bg-white min-h-[600px] text-slate-900">
+        <div ref={printAreaRef} className="print-sheet p-8 sm:p-12 relative bg-white min-h-[600px] text-slate-900">
           
           {/* Watermark for Approved Proposals */}
           {isApproved && (

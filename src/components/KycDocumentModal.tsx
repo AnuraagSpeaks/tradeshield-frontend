@@ -1,5 +1,6 @@
-import React from "react";
+import React, { useRef } from "react";
 import { X, Printer, ShieldCheck, FileText, CheckCircle2, Building, CreditCard, Award, Landmark, Truck } from "lucide-react";
+import { printElement } from "../utils/printHelper";
 
 export interface KycDocData {
   type: string;
@@ -27,10 +28,16 @@ export const KycDocumentModal: React.FC<KycDocumentModalProps> = ({
   doc,
   onClose,
 }) => {
+  const printAreaRef = useRef<HTMLDivElement>(null);
+
   if (!isOpen || !doc) return null;
 
   const handlePrint = () => {
-    window.print();
+    if (printAreaRef.current) {
+      printElement(printAreaRef.current, `${doc.type} - ${doc.company_name}`);
+    } else {
+      window.print();
+    }
   };
 
   const isGST = doc.type.toLowerCase().includes("gst");
@@ -101,7 +108,7 @@ export const KycDocumentModal: React.FC<KycDocumentModalProps> = ({
         {/* Modal Body - Authentic Document Preview Canvas */}
         <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-800 dark:text-slate-200">
           
-          <div className="print-sheet relative bg-slate-50 dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm font-sans text-xs overflow-hidden">
+          <div ref={printAreaRef} className="print-sheet relative bg-slate-50 dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm font-sans text-xs overflow-hidden">
             
             {/* Authentic Rotated Watermark */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden opacity-[0.06] dark:opacity-[0.08]">

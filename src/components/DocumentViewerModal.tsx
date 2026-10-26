@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useRef } from "react";
 import { X, Printer, ShieldCheck, FileText, Truck, Award } from "lucide-react";
 import { Milestone, Contract } from "../types";
+import { printElement } from "../utils/printHelper";
 
 interface DocumentViewerModalProps {
   isOpen: boolean;
@@ -15,6 +16,8 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
   contract,
   onClose,
 }) => {
+  const printAreaRef = useRef<HTMLDivElement>(null);
+
   if (!isOpen || !milestone) return null;
 
   const isLR = milestone.title.toLowerCase().includes("dispatch") || 
@@ -26,7 +29,11 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
                        milestone.sequence === 1;
 
   const handlePrint = () => {
-    window.print();
+    if (printAreaRef.current) {
+      printElement(printAreaRef.current, isLR ? "Transporter Lorry Receipt" : isAdvanceMTC ? "Mill Test Certificate" : "QC Inspection Report");
+    } else {
+      window.print();
+    }
   };
 
   return (
@@ -76,7 +83,7 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
         <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-800 dark:text-slate-200">
           
           {/* Printable Document Container */}
-          <div className="print-sheet relative bg-slate-50 dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm font-sans text-xs overflow-hidden">
+          <div ref={printAreaRef} className="print-sheet relative bg-slate-50 dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm font-sans text-xs overflow-hidden">
             
             {/* Authentic Rotated Watermark */}
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden opacity-[0.05] dark:opacity-[0.07]">
