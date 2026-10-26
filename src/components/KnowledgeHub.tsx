@@ -61,8 +61,8 @@ export const blogPosts: BlogPost[] = [
       "Having a structured, pre-approved proposal is the best defense against quality disputes. A Payment Protection Proposal must include explicit notes detailing what constitutes acceptable quality.",
       "• Sample Lock: Reference pre-agreed sample codes in the notes.",
       "• Third-Party Inspection: Agree on a certified inspection agency (e.g., SGS, Bureau Veritas) to verify goods before cargo loading.",
-      "• Neutral Arbitration: Ensure your payment protection provider has legally binding arbitration terms where independent trade experts resolve disputes within days, not years.",
-      "Using PayShieldX's built-in Disputes Panel, both parties can upload cargo reports, packing logs, and sample photos. Arbiters review this data objectively to release or refund funds based on merit.",
+      "• Dispute Resolution: Ensure your payment protection provider has legally binding terms where independent trade experts and administrators resolve disputes within days, not years.",
+      "Using PayShieldX's built-in Disputes Panel, both parties can upload cargo reports, packing logs, and sample photos. Admins review this data objectively to release or refund funds based on merit.",
     ],
   },
 ];

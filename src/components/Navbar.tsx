@@ -108,10 +108,10 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
                 <div className="text-left">
                   <div className="font-extrabold text-slate-900 dark:text-white truncate max-w-[120px] sm:max-w-[170px]">
-                    {user.business_name}
+                    {user.role === "admin" ? "PayShield Admin" : user.business_name}
                   </div>
                   <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
-                    {user.role === "admin" ? "⚖️ Neutral Arbiter" : user.role === "supplier" ? "Verified Supplier" : "Buyer Pass"}
+                    {user.role === "admin" ? "🛡️ Admin" : user.role === "supplier" ? "Verified Supplier" : "Buyer Pass"}
                   </div>
                 </div>
 

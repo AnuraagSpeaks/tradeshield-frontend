@@ -268,7 +268,7 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
             <p className="font-bold text-slate-700">Terms & Conditions:</p>
             <p>1. <strong>Escrow Protection:</strong> Funds deposited for this trade deal are secured in an RBI-regulated ICICI Bank Escrow Nodal Account under PayShieldX protocol.</p>
             <p>2. <strong>Tranche Releases:</strong> Disbursals are triggered strictly upon verified physical deliverable milestones (QC Mill Certificate, Transporter Lorry Receipt, and Destination Receiving).</p>
-            <p>3. <strong>Neutral Arbitration:</strong> Quality discrepancies are adjudicated by PayShield Neutral Arbitration Panel with legally binding settlement under the Arbitration & Conciliation Act, 1996.</p>
+            <p>3. <strong>Dispute Resolution:</strong> Quality discrepancies are adjudicated by PayShield Admin with legally binding settlement under the Arbitration & Conciliation Act, 1996.</p>
           </div>
 
         </div>

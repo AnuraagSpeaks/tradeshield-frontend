@@ -370,7 +370,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                 {activatedPass
                   ? "Identity Verified & Pass Issued!"
                   : role === "admin"
-                  ? "PayShield Neutral Arbitration & Admin Desk"
+                  ? "PayShield Admin Desk"
                   : mode === "login"
                   ? "Sign In to Escrow Portal"
                   : mode === "register"
@@ -383,7 +383,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
               </h2>
               <p className="text-xs text-slate-500 dark:text-slate-400">
                 {role === "admin"
-                  ? "Restricted Legal Console • Authorized Admin Credentials Required"
+                  ? "Restricted Executive Console • Authorized Admin Credentials Required"
                   : "RBI Nodal Escrow Protocol • Instant Dual-Party Verification"}
               </p>
             </div>
@@ -480,10 +480,10 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                 <div className="p-4 rounded-2xl bg-purple-50/80 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-500/30 space-y-2">
                   <div className="flex items-center gap-2 text-xs font-bold text-purple-900 dark:text-purple-300">
                     <Lock className="w-4 h-4 text-purple-600 dark:text-purple-400 shrink-0" />
-                    <span>Restricted Arbitration Desk Access</span>
+                    <span>Restricted Admin Desk Access</span>
                   </div>
                   <p className="text-[11px] text-purple-700 dark:text-purple-300/80 leading-relaxed">
-                    Access to the PayShield Neutral Arbitration & Escrow Clearing Desk requires cryptographic executive credentials. Enter your authorized administrator email and security password to proceed.
+                    Access to the PayShield Admin & Escrow Clearing Desk requires cryptographic executive credentials. Enter your authorized administrator email and security password to proceed.
                   </p>
                 </div>
               ) : (

@@ -229,7 +229,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
     });
     setDisputesList((prev) => [...prev, disp]);
     setDisputeModalOpen(false);
-    alert("Dispute registered. Transferred to PayShield Arbitration Court.");
+    alert("Dispute registered. Transferred to PayShield Admin for resolution.");
     loadData();
   };
 
@@ -265,16 +265,16 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 dark:text-white">
             {role === "ADMIN"
-              ? "Arbitration Court & Escrow Ledger Desk"
+              ? "Admin Executive & Escrow Ledger Desk"
               : role === "BUYER"
               ? "Buyer Procurement Portal"
               : "Supplier Fulfillment & Payout Portal"}
           </h1>
           <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 font-mono">
             {user
-              ? `Logged in as ${user.business_name} (${user.city || "India"}) • Signatory: ${user.contact_person || "Authorized Signatory"} • GSTIN: ${user.gst} • Pass ID: ${user.pass_id || "PSX-ACTIVE"}`
+              ? `Logged in as ${user.role === "admin" ? "PayShield Admin" : user.business_name} (${user.city || "India"}) • Signatory: ${user.contact_person || "Authorized Signatory"} • GSTIN: ${user.gst} • Pass ID: ${user.pass_id || "PSX-ACTIVE"}`
               : role === "ADMIN"
-              ? "Logged in as PayShield Neutral Arbitration Panel (New Delhi) • Arbiter: Justice (Retd.) K. N. Verma"
+              ? "Logged in as PayShield Admin (New Delhi) • Admin: Justice (Retd.) K. N. Verma"
               : role === "BUYER"
               ? "Logged in as Apex Auto Components Pvt Ltd (Pune) • GSTIN: 27AAACA1234A1Z5"
               : "Logged in as Bharat Precision Castings Ltd (Vadodara) • GSTIN: 24AAACB5678B1Z2"}
@@ -292,7 +292,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
                 : "bg-emerald-600 text-white dark:bg-emerald-500 dark:text-slate-950"
             )}>
               {role === "ADMIN" ? <ShieldCheck className="w-3.5 h-3.5" /> : role === "BUYER" ? <Briefcase className="w-3.5 h-3.5" /> : <Building2 className="w-3.5 h-3.5" />}
-              <span>{role === "ADMIN" ? "COURT ARBITER PANEL" : role === "BUYER" ? "BUYER WORKSPACE" : "SUPPLIER WORKSPACE"}</span>
+              <span>{role === "ADMIN" ? "ADMIN PANEL" : role === "BUYER" ? "BUYER WORKSPACE" : "SUPPLIER WORKSPACE"}</span>
             </span>
           </div>
 
@@ -941,7 +941,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
               <div className="flex items-center gap-2">
                 <Gavel className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                 <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                  Arbitration & Dispute Resolution Court
+                  Dispute Resolution & Admin Settlement
                 </h2>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
@@ -1000,7 +1000,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         </div>
       )}
 
-      {/* Double-Entry Nodal Ledger Tab (Court Arbiter / Admin Exclusive) */}
+      {/* Double-Entry Nodal Ledger Tab (Admin Exclusive) */}
       {activeTab === "ledger" && (
         <div className="p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1258,7 +1258,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
             <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2">
                 <Gavel className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-                <h3 className="font-bold text-slate-900 dark:text-white text-base">Issue Legal Arbitration Decree</h3>
+                <h3 className="font-bold text-slate-900 dark:text-white text-base">Execute Admin Dispute Settlement</h3>
               </div>
               <button onClick={() => setArbitrationModalOpen(false)} className="text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer">
                 <X className="w-5 h-5" />
@@ -1318,7 +1318,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Arbiter Decree Notes & Statutory Findings</label>
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Admin Settlement Notes & Findings</label>
                 <textarea
                   rows={3}
                   value={verdictNotes}

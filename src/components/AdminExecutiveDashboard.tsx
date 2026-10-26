@@ -219,7 +219,7 @@ export const AdminExecutiveDashboard: React.FC = () => {
           { id: "buyers", label: "2. Buyer Management", icon: Users, badge: buyers.length },
           { id: "suppliers", label: "3. Supplier Management", icon: Building2, badge: suppliers.length },
           { id: "finance", label: "4. Revenue & Finance", icon: DollarSign, badge: finance?.pending_settlements.length ? `${finance.pending_settlements.length} Pending` : null },
-          { id: "disputes", label: "5. Arbitration Court", icon: Scale, badge: disputes.length },
+          { id: "disputes", label: "5. Dispute Resolution", icon: Scale, badge: disputes.length },
           { id: "ledger", label: "6. Ledger Audit", icon: FileText, badge: journals.length },
         ].map((tab) => {
           const Icon = tab.icon;
@@ -1207,10 +1207,10 @@ export const AdminExecutiveDashboard: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-sm font-extrabold text-slate-900 dark:text-white uppercase font-mono tracking-wider">
-                Neutral Legal Arbitration Court Bench
+                Admin Dispute Resolution & Settlement Bench
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Inspect technical evidence, test reports, and execute legally binding escrow decrees
+                Inspect technical evidence, test reports, and execute binding escrow settlements
               </p>
             </div>
             <span className="px-3 py-1 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-400 text-xs font-mono font-bold">
@@ -1260,7 +1260,7 @@ export const AdminExecutiveDashboard: React.FC = () => {
                     className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-md transition-all cursor-pointer flex items-center gap-2"
                   >
                     <Scale className="w-4 h-4" />
-                    <span>Issue Legal Arbitration Verdict</span>
+                    <span>Issue Admin Dispute Settlement</span>
                   </button>
                 </div>
               </div>
@@ -1274,7 +1274,7 @@ export const AdminExecutiveDashboard: React.FC = () => {
                 <div className="flex items-start justify-between pb-4 border-b border-slate-200 dark:border-slate-800">
                   <div>
                     <span className="text-[10px] font-mono font-bold uppercase text-blue-600 dark:text-blue-400">
-                      Arbitration Court Order • {activeDispute.id}
+                      Admin Settlement Order • {activeDispute.id}
                     </span>
                     <h3 className="text-lg font-extrabold text-slate-900 dark:text-white mt-0.5">
                       Adjudicate Escrow Claim (₹{activeDispute.claim_amount.toLocaleString("en-IN")})
@@ -1331,7 +1331,7 @@ export const AdminExecutiveDashboard: React.FC = () => {
 
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase font-mono">
-                    Legal Arbiter Findings & Decree Notes:
+                    Admin Settlement Notes & Findings:
                   </label>
                   <textarea
                     rows={3}
@@ -1346,7 +1346,7 @@ export const AdminExecutiveDashboard: React.FC = () => {
                   onClick={handleExecuteArbitration}
                   className="w-full py-3.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold text-xs shadow-lg cursor-pointer"
                 >
-                  Execute Legally Binding Decree & Disburse Funds
+                  Execute Admin Settlement & Disburse Funds
                 </button>
               </div>
             </div>

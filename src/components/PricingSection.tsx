@@ -155,7 +155,7 @@ export const PricingSection: React.FC<PricingProps> = ({ onOpenRole }) => {
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> <strong>₹10,00,000</strong> max monthly transaction value</li>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Verified Supplier Trust Badge</li>
                   <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> Custom API Integrations</li>
-                  <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> 24/7 dedicated legal arbiters</li>
+                  <li className='flex items-center gap-2'><Check className='w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0' /> 24/7 dedicated admin resolution desk</li>
                 </ul>
               </div>
 

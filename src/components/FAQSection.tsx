@@ -15,7 +15,7 @@ const faqs: FAQItem[] = [
   {
     question: "What happens if the buyer refuses to release payments after delivery?",
     answer:
-      "If the supplier uploads proof of delivery (e.g., Lorry Receipt, Bill of Lading, Geotagged goods handover) and the buyer goes unresponsive or refuses to release funds without valid cause, the supplier can raise a formal dispute. Our legal arbiters review the records and can execute an admin override to release funds within 7 days.",
+      "If the supplier uploads proof of delivery (e.g., Lorry Receipt, Bill of Lading, Geotagged goods handover) and the buyer goes unresponsive or refuses to release funds without valid cause, the supplier can raise a formal dispute. Our admin team reviews the records and can execute a settlement override to release funds within 7 days.",
   },
   {
     question: "Can we request edits to a proposal after it has been confirmed?",

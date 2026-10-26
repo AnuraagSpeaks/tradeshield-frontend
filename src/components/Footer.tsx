@@ -73,7 +73,7 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLegal, onNavigate, onOpenA
                   className="hover:text-amber-300 transition-colors flex items-center gap-1.5 text-amber-400 font-mono text-[11px] cursor-pointer"
                 >
                   <Lock className="w-3 h-3" />
-                  <span>Arbitration & Admin Desk</span>
+                  <span>Admin Desk</span>
                 </button>
               </li>
               <li>

@@ -58,7 +58,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : null;
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.role === "admin") {
+          if (parsed.business_name?.includes("Arbitration") || parsed.business_name?.includes("Arbiter")) {
+            parsed.business_name = "PayShield Admin";
+          }
+          if (parsed.designation?.includes("Arbiter")) {
+            parsed.designation = "System Administrator";
+          }
+        }
+        return parsed;
+      }
+      return null;
     } catch {
       return null;
     }
@@ -107,15 +119,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const loggedUser: User = {
           id: u.id || "user_" + Math.random().toString(36).substring(2, 8),
           email: u.email,
-          business_name: u.business_name || (finalRole === "admin" ? "PayShield Neutral Arbitration Panel" : finalRole === "supplier" ? "Bharat Precision Castings Ltd" : "Apex Auto Components Pvt Ltd"),
+          business_name: (u.business_name && !u.business_name.includes("Arbitration") && !u.business_name.includes("Arbiter"))
+            ? u.business_name 
+            : (finalRole === "admin" ? "PayShield Admin" : finalRole === "supplier" ? "Bharat Precision Castings Ltd" : "Apex Auto Components Pvt Ltd"),
           contact_person: u.contact_person || u.full_name || u.name || "Authorized Signatory",
-          designation: u.designation || (finalRole === "admin" ? "Chief Legal Arbiter" : finalRole === "buyer" ? "Head of Procurement" : "Managing Director"),
+          designation: u.designation || (finalRole === "admin" ? "System Administrator" : finalRole === "buyer" ? "Head of Procurement" : "Managing Director"),
           gst: u.gst || (finalRole === "admin" ? "07AAACT0001A1Z9" : finalRole === "supplier" ? "24AABCB5678B1Z2" : "27AAACA1234A1Z5"),
           pan: u.pan || (finalRole === "admin" ? "AAACT0001A" : finalRole === "supplier" ? "AABCB5678B" : "AAACA1234A"),
           mobile: u.mobile || "9876543210",
           city: u.city || (finalRole === "admin" ? "New Delhi" : finalRole === "supplier" ? "Vadodara" : "Pune"),
           state: u.state || (finalRole === "admin" ? "Delhi NCR" : finalRole === "supplier" ? "Gujarat" : "Maharashtra"),
-          category: u.category || (finalRole === "admin" ? "Neutral Commercial Arbitration" : finalRole === "supplier" ? "Precision Metal & Foundry" : "Automotive & Heavy Engineering"),
+          category: u.category || (finalRole === "admin" ? "Platform Administration & Escrow Governance" : finalRole === "supplier" ? "Precision Metal & Foundry" : "Automotive & Heavy Engineering"),
           role: finalRole,
           plan_tier: finalRole === "buyer" ? "buyer_free" : finalRole === "supplier" ? "business" : "enterprise",
           pass_id: u.pass_id || ("PSX-" + finalRole.toUpperCase() + "-" + Math.floor(100000 + Math.random() * 900000)),
