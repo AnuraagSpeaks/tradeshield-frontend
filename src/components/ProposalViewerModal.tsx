@@ -80,7 +80,7 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
         </div>
 
         {/* Printable Proposal Document Body */}
-        <div className="p-8 sm:p-12 relative bg-white min-h-[600px] text-slate-900">
+        <div className="print-sheet p-8 sm:p-12 relative bg-white min-h-[600px] text-slate-900">
           
           {/* Watermark for Approved Proposals */}
           {isApproved && (

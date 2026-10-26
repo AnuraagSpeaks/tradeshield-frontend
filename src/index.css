@@ -11,3 +11,76 @@
     font-family: "JetBrains Mono", monospace;
   }
 }
+
+/* ==========================================================================
+   Clean Single-Page Print Engine for Proposals, Documents, and KYC Files
+   ========================================================================== */
+@media print {
+  /* 1. Global Reset: Hide all background elements, headers, footers, sidebars */
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    font-size: 11pt !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Hide app navigation, topbars, background dashboard, modals backdrop, and buttons */
+  header, footer, nav, aside,
+  .no-print,
+  button,
+  [role="button"] {
+    display: none !important;
+  }
+
+  /* 2. Hide everything except active print sheet when a modal is open */
+  body > div:not(#root) {
+    display: none !important;
+  }
+
+  /* If a modal is present, strip its fixed overlay wrapper so it flows as a crisp single page */
+  .fixed.inset-0 {
+    position: static !important;
+    display: block !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  .print-sheet {
+    position: relative !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 15mm 20mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
+    page-break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-after: avoid !important;
+    break-inside: avoid !important;
+  }
+
+  /* Hide the underlying page when print sheet is active */
+  body:has(.print-sheet) main,
+  body:has(.print-sheet) #pricing,
+  body:has(.print-sheet) .min-h-screen {
+    display: none !important;
+  }
+
+  /* 3. Page layout settings: exactly 1 clean page */
+  @page {
+    size: A4 portrait;
+    margin: 12mm 15mm;
+  }
+}
