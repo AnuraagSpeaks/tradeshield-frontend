@@ -793,3 +793,83 @@ export async function processAdminSettlement(settlementId: string): Promise<{ su
     return { success: true, utr_number: "ICICR52026" + Math.floor(10000000 + Math.random() * 90000000) };
   }
 }
+
+// -------------------------------------------------------------
+// Razorpay Integration API Endpoints
+// -------------------------------------------------------------
+
+export interface CreateOrderResponse {
+  order_id: string;
+  amount: number;
+  currency: string;
+}
+
+export async function createRazorpayOrder(amountInPaise: number, receipt?: string): Promise<CreateOrderResponse> {
+  const res = await fetch(`${API_BASE}/create-order`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      amount: amountInPaise,
+      currency: "INR",
+      receipt: receipt || `rcpt_${Date.now()}`,
+    }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err.error || err.message || "Failed to create Razorpay payment order");
+  }
+  const json = await res.json();
+  return json.data;
+}
+
+export interface VerifyPaymentPayload {
+  order_id: string;
+  payment_id: string;
+  signature: string;
+}
+
+export async function verifyRazorpayPayment(payload: VerifyPaymentPayload): Promise<{ success: boolean; message: string }> {
+  const res = await fetch(`${API_BASE}/verify-payment`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(json.error || json.message || "Razorpay signature verification rejected");
+  }
+  return json.data;
+}
+
+// -------------------------------------------------------------
+// Pinelabs GST Lookup API Endpoint
+// -------------------------------------------------------------
+
+export interface GSTVerificationResult {
+  gstin: string;
+  legal_name: string;
+  trade_name?: string;
+  address: string;
+  city?: string;
+  state?: string;
+  pincode?: string;
+  status: string;
+  status_code: string;
+  taxpayer_type?: string;
+  message?: string;
+  auth_source?: string;
+}
+
+export async function lookupGSTIN(gstin: string): Promise<GSTVerificationResult> {
+  const res = await fetch(`${API_BASE}/gst/lookup`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ gstin: gstin.trim().toUpperCase() }),
+  });
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(json.error || json.message || "Failed to verify GSTIN against portal");
+  }
+  return json.data;
+}
+
