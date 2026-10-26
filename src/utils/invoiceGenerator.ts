@@ -17,7 +17,8 @@ export interface InvoiceData {
 }
 
 export function generateAndDownloadGSTInvoice(data: InvoiceData) {
-  const isInterstate = data.customerGst && !data.customerGst.startsWith("07");
+  const sellerStateCode = "20"; // S.S. Enterprises (GSTIN: 20KBIPS8898M1ZG)
+  const isInterstate = data.customerGst ? !data.customerGst.startsWith(sellerStateCode) : true;
   const cgstAmount = isInterstate ? 0 : Math.round(data.basePrice * 0.09);
   const sgstAmount = isInterstate ? 0 : Math.round(data.basePrice * 0.09);
   const igstAmount = isInterstate ? Math.round(data.basePrice * 0.18) : 0;

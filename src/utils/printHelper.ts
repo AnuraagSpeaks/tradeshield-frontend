@@ -92,9 +92,20 @@ export function printElement(elementIdOrRef: HTMLElement | string, docTitle?: st
   // Trigger print once iframe resources are ready
   iframe.contentWindow?.focus();
   setTimeout(() => {
+    const cleanup = () => {
+      try {
+        if (iframe.parentNode) {
+          document.body.removeChild(iframe);
+        }
+      } catch (_) {}
+    };
+
+    if (iframe.contentWindow) {
+      iframe.contentWindow.addEventListener("afterprint", cleanup, { once: true });
+    }
     iframe.contentWindow?.print();
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-    }, 1500);
+
+    // Fallback cleanup after 60 seconds if afterprint is not triggered
+    setTimeout(cleanup, 60000);
   }, 400);
 }
