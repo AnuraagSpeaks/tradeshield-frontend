@@ -49,6 +49,7 @@ import {
   arbitrateDispute,
   fetchLedgerJournals
 } from "../api/client";
+import { KycDocumentModal, KycDocData } from "./KycDocumentModal";
 
 export const AdminExecutiveDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"overview" | "buyers" | "suppliers" | "finance" | "disputes" | "ledger">("overview");
@@ -72,6 +73,7 @@ export const AdminExecutiveDashboard: React.FC = () => {
   // Selected Detail Modal States
   const [selectedBuyer, setSelectedBuyer] = useState<BuyerRecord | null>(null);
   const [selectedSupplier, setSelectedSupplier] = useState<SupplierRecord | null>(null);
+  const [activeKycDoc, setActiveKycDoc] = useState<KycDocData | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string>("");
 
   // Dispute Arbitration Modal
@@ -653,11 +655,49 @@ export const AdminExecutiveDashboard: React.FC = () => {
                     <p className="text-slate-600 dark:text-slate-400">{selectedBuyer.mobile}</p>
                     <p className="text-slate-600 dark:text-slate-400">{selectedBuyer.email}</p>
                   </div>
-                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1 font-mono">
-                    <span className="text-slate-500">Compliance & Tax</span>
-                    <p className="font-bold text-slate-900 dark:text-white">GSTIN: {selectedBuyer.gstin}</p>
-                    <p className="text-slate-600 dark:text-slate-400">PAN: {selectedBuyer.pan}</p>
-                    <p className="text-emerald-600 font-bold">KYC: {selectedBuyer.kyc_status}</p>
+                  <div className="p-3.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2 font-mono">
+                    <span className="text-slate-500 font-sans">Compliance & Tax</span>
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-slate-900 dark:text-white">GSTIN: {selectedBuyer.gstin}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveKycDoc({
+                            type: "GST Registration Certificate",
+                            document_no: selectedBuyer.gstin,
+                            company_name: selectedBuyer.company_name,
+                            signatory: selectedBuyer.name,
+                            status: selectedBuyer.kyc_status,
+                            gstin: selectedBuyer.gstin,
+                            pan: selectedBuyer.pan,
+                          });
+                        }}
+                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-bold font-sans cursor-pointer flex items-center gap-1"
+                      >
+                        <Eye className="w-3 h-3" /> View GST
+                      </button>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-600 dark:text-slate-400">PAN: {selectedBuyer.pan}</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveKycDoc({
+                            type: "Company PAN Card",
+                            document_no: selectedBuyer.pan,
+                            company_name: selectedBuyer.company_name,
+                            signatory: selectedBuyer.name,
+                            status: selectedBuyer.kyc_status,
+                            gstin: selectedBuyer.gstin,
+                            pan: selectedBuyer.pan,
+                          });
+                        }}
+                        className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline font-bold font-sans cursor-pointer flex items-center gap-1"
+                      >
+                        <Eye className="w-3 h-3" /> View PAN
+                      </button>
+                    </div>
+                    <p className="text-emerald-600 font-bold font-sans">KYC Status: {selectedBuyer.kyc_status}</p>
                   </div>
                 </div>
 
@@ -909,14 +949,26 @@ export const AdminExecutiveDashboard: React.FC = () => {
                           </span>
                         </div>
                         <p className="font-mono text-[11px] text-slate-500">Doc No: {doc.document_no}</p>
-                        <a
-                          href={doc.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:underline font-semibold cursor-pointer"
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setActiveKycDoc({
+                              type: doc.type,
+                              document_no: doc.document_no,
+                              company_name: selectedSupplier.company_name,
+                              signatory: selectedSupplier.contact_person,
+                              status: doc.status,
+                              pan: selectedSupplier.pan,
+                              gstin: selectedSupplier.gstin,
+                              bank_name: selectedSupplier.settlement_info.bank_name,
+                              account_number: selectedSupplier.settlement_info.account_number,
+                              ifsc_code: selectedSupplier.settlement_info.ifsc_code,
+                            });
+                          }}
+                          className="inline-flex items-center gap-1.5 text-[11px] text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 font-bold hover:underline cursor-pointer"
                         >
-                          <ExternalLink className="w-3 h-3" /> View Scanned PDF
-                        </a>
+                          <Eye className="w-3.5 h-3.5" /> View Scanned Document
+                        </button>
                       </div>
                     ))}
                   </div>
@@ -1351,6 +1403,13 @@ export const AdminExecutiveDashboard: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* KYC Document In-App Preview Modal */}
+      <KycDocumentModal
+        isOpen={!!activeKycDoc}
+        doc={activeKycDoc}
+        onClose={() => setActiveKycDoc(null)}
+      />
 
     </div>
   );

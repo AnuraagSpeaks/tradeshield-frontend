@@ -109,7 +109,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   const [proofMilestone, setProofMilestone] = useState<Milestone | null>(null);
   const [transporterName, setTransporterName] = useState("V-Trans Express Logistics");
   const [lrNumber, setLrNumber] = useState("LR-VT-2026-98124");
-  const [proofUrl, setProofUrl] = useState("https://docs.payshieldx.in/proofs/dispatch_lr_98124.pdf");
+  const [proofUrl, setProofUrl] = useState("https://vault.payshieldx.in/proofs/dispatch_lr_98124.pdf");
   const [dispatchNotes, setDispatchNotes] = useState("Consignment dispatched with 5,000 units inspected and sealed.");
 
   // Document Viewer Modal State

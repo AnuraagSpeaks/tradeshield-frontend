@@ -76,7 +76,14 @@ export const DocumentViewerModal: React.FC<DocumentViewerModalProps> = ({
         <div className="p-6 sm:p-8 overflow-y-auto space-y-6 text-slate-800 dark:text-slate-200">
           
           {/* Printable Document Container */}
-          <div className="bg-slate-50 dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm font-sans text-xs">
+          <div className="relative bg-slate-50 dark:bg-slate-950 p-6 sm:p-8 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-6 shadow-sm font-sans text-xs overflow-hidden">
+            
+            {/* Authentic Rotated Watermark */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none select-none overflow-hidden opacity-[0.05] dark:opacity-[0.07]">
+              <span className="text-6xl sm:text-7xl font-black uppercase transform -rotate-25 border-8 border-blue-600 dark:border-emerald-500 text-blue-600 dark:text-emerald-500 px-8 py-4 rounded-3xl">
+                DIGITALLY SEALED PROOF
+              </span>
+            </div>
             
             {/* Header / Watermark Badge */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-slate-200 dark:border-slate-800">

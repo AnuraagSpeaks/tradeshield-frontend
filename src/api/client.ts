@@ -52,7 +52,7 @@ export const INITIAL_CONTRACTS: Contract[] = [
         percentage: 20,
         amount: 500000,
         status: "RELEASED",
-        deliverable_proof_url: "https://docs.payshieldx.in/proofs/raw_material_cert_089.pdf",
+        deliverable_proof_url: "https://vault.payshieldx.in/proofs/raw_material_cert_089.pdf",
         inspection_notes: "Mill test certificate verified against ASTM A536 standards.",
         submitted_at: new Date(Date.now() - 3 * 86400000).toISOString(),
         approved_at: new Date(Date.now() - 2 * 86400000).toISOString(),
@@ -68,7 +68,7 @@ export const INITIAL_CONTRACTS: Contract[] = [
         percentage: 40,
         amount: 1000000,
         status: "IN_INSPECTION",
-        deliverable_proof_url: "https://docs.payshieldx.in/proofs/eway_bill_lr_089.pdf",
+        deliverable_proof_url: "https://vault.payshieldx.in/proofs/eway_bill_lr_089.pdf",
         inspection_notes: "Consignment in transit. Expected delivery in Pune warehouse by tomorrow.",
         submitted_at: new Date(Date.now() - 1 * 86400000).toISOString(),
         due_date: new Date(Date.now() + 2 * 86400000).toISOString(),
@@ -193,7 +193,52 @@ export async function createProposal(payload: Partial<Proposal>): Promise<Propos
     const json = await res.json();
     return json.data;
   } catch {
-    return null;
+    const baseAmt = payload.base_amount || 250000;
+    const discPct = payload.discount_percent || 0;
+    const discAmt = baseAmt * (discPct / 100);
+    const dealAmt = baseAmt - discAmt;
+    const taxPct = payload.tax_percent || 18;
+    const taxAmt = dealAmt * (taxPct / 100);
+    const totalPayable = dealAmt + taxAmt;
+    const propNumber = String(Math.floor(4770000 + Math.random() * 90000));
+
+    const mockProposal: Proposal = {
+      id: "prop_" + Math.random().toString(36).substring(2, 9),
+      proposal_number: propNumber,
+      order_id: `ORD-${propNumber}`,
+      buyer_id: payload.buyer_id || "org_buyer_01",
+      buyer_name: payload.buyer_name || "Apex Auto Components Pvt Ltd",
+      buyer_signatory: payload.buyer_signatory || "Vikram Malhotra",
+      buyer_email: payload.buyer_email || "procurement@apexauto.in",
+      buyer_gstin: payload.buyer_gstin || "27AAACA1234A1Z5",
+      buyer_address: payload.buyer_address || "Plot 42, MIDC Bhosari Industrial Area, Pune, Maharashtra 411026",
+      supplier_id: payload.supplier_id || "org_seller_01",
+      supplier_name: payload.supplier_name || "Bharat Precision Castings Ltd",
+      supplier_signatory: payload.supplier_signatory || "Rajesh Singhania",
+      supplier_email: payload.supplier_email || "sales@bharatcastings.com",
+      supplier_gstin: payload.supplier_gstin || "24AABCB5678B1Z2",
+      supplier_address: payload.supplier_address || "Survey No. 118, GIDC Makarpura Industrial Estate, Vadodara, Gujarat 390010",
+      item_description: payload.item_description || "Supply of Precision Cast Flanges & Engineering Components",
+      base_amount: baseAmt,
+      discount_percent: discPct,
+      discount_amount: discAmt,
+      tax_percent: taxPct,
+      tax_amount: taxAmt,
+      total_payable_amount: totalPayable,
+      amount: totalPayable,
+      currency: payload.currency || "INR",
+      terms: payload.terms || "100% Escrow Protected Trade Deal via PayShieldX Nodal Trust Account",
+      milestones_summary: payload.milestones_summary || "20% Advance (QC Cert) • 40% Dispatch (LR Proof) • 40% Delivery (Warehouse Signoff)",
+      delivery_timeline: payload.delivery_timeline || "21 Business Days",
+      notes: payload.notes || "Auto-generated official Trade Deal Proposal with PayShieldX Escrow Protection",
+      status: "PENDING_BUYER_APPROVAL",
+      payment_status: "Pending Escrow",
+      buyer_approved: false,
+      supplier_approved: true,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    return mockProposal;
   }
 }
 
@@ -577,9 +622,9 @@ export async function fetchAdminSuppliers(): Promise<SupplierRecord[]> {
         gstin: "24AABCB5678B1Z2",
         pan: "AABCB5678B",
         kyc_documents: [
-          { type: "GST Certificate", document_no: "24AABCB5678B1Z2", url: "https://docs.payshieldx.in/kyc/gst_bharat.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 90 * 86400000).toISOString(), verified_at: new Date(Date.now() - 90 * 86400000).toISOString() },
-          { type: "Cancelled Cheque", document_no: "CHQ-009124", url: "https://docs.payshieldx.in/kyc/cheque_bharat.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 90 * 86400000).toISOString(), verified_at: new Date(Date.now() - 90 * 86400000).toISOString() },
-          { type: "Company PAN Card", document_no: "AABCB5678B", url: "https://docs.payshieldx.in/kyc/pan_bharat.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 90 * 86400000).toISOString(), verified_at: new Date(Date.now() - 90 * 86400000).toISOString() },
+          { type: "GST Certificate", document_no: "24AABCB5678B1Z2", url: "https://vault.payshieldx.in/kyc/gst_bharat.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 90 * 86400000).toISOString(), verified_at: new Date(Date.now() - 90 * 86400000).toISOString() },
+          { type: "Cancelled Cheque", document_no: "CHQ-009124", url: "https://vault.payshieldx.in/kyc/cheque_bharat.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 90 * 86400000).toISOString(), verified_at: new Date(Date.now() - 90 * 86400000).toISOString() },
+          { type: "Company PAN Card", document_no: "AABCB5678B", url: "https://vault.payshieldx.in/kyc/pan_bharat.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 90 * 86400000).toISOString(), verified_at: new Date(Date.now() - 90 * 86400000).toISOString() },
         ],
         verification_status: "Approved",
         supplier_plan: "Enterprise Plan",
@@ -612,8 +657,8 @@ export async function fetchAdminSuppliers(): Promise<SupplierRecord[]> {
         gstin: "20KBIPS8898M1ZG",
         pan: "KBIPS8898M",
         kyc_documents: [
-          { type: "GST Certificate", document_no: "20KBIPS8898M1ZG", url: "https://docs.payshieldx.in/kyc/gst_ss.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 60 * 86400000).toISOString(), verified_at: new Date(Date.now() - 60 * 86400000).toISOString() },
-          { type: "Cancelled Cheque", document_no: "CHQ-778211", url: "https://docs.payshieldx.in/kyc/cheque_ss.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 60 * 86400000).toISOString(), verified_at: new Date(Date.now() - 60 * 86400000).toISOString() },
+          { type: "GST Certificate", document_no: "20KBIPS8898M1ZG", url: "https://vault.payshieldx.in/kyc/gst_ss.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 60 * 86400000).toISOString(), verified_at: new Date(Date.now() - 60 * 86400000).toISOString() },
+          { type: "Cancelled Cheque", document_no: "CHQ-778211", url: "https://vault.payshieldx.in/kyc/cheque_ss.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 60 * 86400000).toISOString(), verified_at: new Date(Date.now() - 60 * 86400000).toISOString() },
         ],
         verification_status: "Approved",
         supplier_plan: "Business Plan",
@@ -646,8 +691,8 @@ export async function fetchAdminSuppliers(): Promise<SupplierRecord[]> {
         gstin: "24AABCP9911P1Z8",
         pan: "AABCP9911P",
         kyc_documents: [
-          { type: "GST Certificate", document_no: "24AABCP9911P1Z8", url: "https://docs.payshieldx.in/kyc/gst_zenith.pdf", status: "Pending", uploaded_at: new Date(Date.now() - 2 * 86400000).toISOString() },
-          { type: "Bank Passbook", document_no: "PB-00129", url: "https://docs.payshieldx.in/kyc/passbook_zenith.pdf", status: "Pending", uploaded_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+          { type: "GST Certificate", document_no: "24AABCP9911P1Z8", url: "https://vault.payshieldx.in/kyc/gst_zenith.pdf", status: "Pending", uploaded_at: new Date(Date.now() - 2 * 86400000).toISOString() },
+          { type: "Bank Passbook", document_no: "PB-00129", url: "https://vault.payshieldx.in/kyc/passbook_zenith.pdf", status: "Pending", uploaded_at: new Date(Date.now() - 2 * 86400000).toISOString() },
         ],
         verification_status: "Pending",
         supplier_plan: "Growth Plan",
@@ -680,7 +725,7 @@ export async function fetchAdminSuppliers(): Promise<SupplierRecord[]> {
         gstin: "06AAACV1298V1Z0",
         pan: "AAACV1298V",
         kyc_documents: [
-          { type: "GST Certificate", document_no: "06AAACV1298V1Z0", url: "https://docs.payshieldx.in/kyc/gst_vanguard.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 150 * 86400000).toISOString(), verified_at: new Date(Date.now() - 150 * 86400000).toISOString() },
+          { type: "GST Certificate", document_no: "06AAACV1298V1Z0", url: "https://vault.payshieldx.in/kyc/gst_vanguard.pdf", status: "Approved", uploaded_at: new Date(Date.now() - 150 * 86400000).toISOString(), verified_at: new Date(Date.now() - 150 * 86400000).toISOString() },
         ],
         verification_status: "Approved",
         supplier_plan: "Business Plan",
