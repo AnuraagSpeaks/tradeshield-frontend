@@ -57,23 +57,8 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   const { user, logout } = useAuth();
   
   // Strict Role-Based Access: Role is strictly derived from verified authentication credentials
-  const userRoleStr = (user?.role || "").toLowerCase();
-  const isAdmin = 
-    userRoleStr === "admin" || 
-    userRoleStr.includes("arbit") || 
-    (user?.email || "").toLowerCase().includes("court") || 
-    (user?.email || "").toLowerCase().includes("admin") ||
-    (user?.email || "").toLowerCase().includes("arbiter");
-
-  const isSupplier = 
-    !isAdmin && (
-      userRoleStr === "supplier" || 
-      userRoleStr.includes("seller") || 
-      (user?.email || "").toLowerCase().includes("supplier") || 
-      (user?.email || "").toLowerCase().includes("sales") ||
-      (user?.email || "").toLowerCase().includes("bharat")
-    );
-
+  const isAdmin = user?.role === "admin";
+  const isSupplier = !isAdmin && user?.role === "supplier";
   const role: "BUYER" | "SUPPLIER" | "ADMIN" = isAdmin ? "ADMIN" : isSupplier ? "SUPPLIER" : "BUYER";
 
   const [contracts, setContracts] = useState<Contract[]>([]);

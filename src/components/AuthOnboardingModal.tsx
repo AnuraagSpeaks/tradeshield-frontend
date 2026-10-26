@@ -234,7 +234,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
     }
     setLoading(true);
     setErrorMsg("");
-    const res = await login(email, password);
+    const res = await login(email, password, role);
     setLoading(false);
     if (res.success) {
       if (role === "admin" && res.user?.role !== "admin") {

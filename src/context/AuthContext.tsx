@@ -4,7 +4,7 @@ import { User } from "../types";
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password?: string) => Promise<{ success: boolean; message?: string; user?: User }>;
+  login: (email: string, password?: string, targetRole?: "buyer" | "supplier" | "admin") => Promise<{ success: boolean; message?: string; user?: User }>;
   register: (userData: Partial<User>) => Promise<{ success: boolean; message?: string; user?: User }>;
   logout: () => void;
   updateUser: (data: Partial<User>) => void;
@@ -61,12 +61,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.role === "admin") {
-          if (parsed.business_name?.includes("Arbitration") || parsed.business_name?.includes("Arbiter")) {
-            parsed.business_name = "PayShield Admin";
+          const email = (parsed.email || "").toLowerCase().trim();
+          // Zero-Trust Admin validation: Only authorized executive admin emails allowed
+          if (email !== "admin@payshieldx.in" && email !== "court@payshieldx.in") {
+            localStorage.removeItem(STORAGE_KEY);
+            return null;
           }
-          if (parsed.designation?.includes("Arbiter")) {
-            parsed.designation = "System Administrator";
-          }
+          parsed.business_name = "PayShield Admin";
+          parsed.designation = "System Administrator";
         }
         return parsed;
       }
@@ -88,7 +90,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  const login = async (email: string, password?: string): Promise<{ success: boolean; message?: string; user?: User }> => {
+  const login = async (
+    email: string, 
+    password?: string, 
+    targetRole?: "buyer" | "supplier" | "admin"
+  ): Promise<{ success: boolean; message?: string; user?: User }> => {
     const cleanEmail = email.toLowerCase().trim();
     if (!cleanEmail || !cleanEmail.includes("@")) {
       return { success: false, message: "Please enter a valid email address." };
@@ -97,31 +103,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { success: false, message: "Password credentials are required." };
     }
 
-    const isSupplierEmail = cleanEmail.includes("supplier") || cleanEmail.includes("sales") || cleanEmail.includes("bharat") || cleanEmail.includes("seller") || cleanEmail.includes("castings");
-    const isAdminEmail = cleanEmail.includes("court") || cleanEmail.includes("admin") || cleanEmail.includes("arbiter");
-    const inferredRole: "buyer" | "supplier" | "admin" = isAdminEmail ? "admin" : isSupplierEmail ? "supplier" : "buyer";
+    const requestedRole = targetRole || (cleanEmail === "admin@payshieldx.in" || cleanEmail === "court@payshieldx.in" ? "admin" : "buyer");
 
-    // 1. Authenticate strictly against Backend API
+    // Authenticate strictly against Backend API
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: cleanEmail, password, role: inferredRole }),
+        body: JSON.stringify({ email: cleanEmail, password, role: requestedRole }),
       });
       const data = await res.json();
       if (res.ok && data.data?.user) {
         const u = data.data.user;
-        const userRoleStr = (u.role || inferredRole).toLowerCase();
-        const finalRole: "buyer" | "supplier" | "admin" = 
-          userRoleStr.includes("admin") || userRoleStr.includes("arbit") ? "admin" :
-          userRoleStr.includes("supplier") || userRoleStr.includes("seller") ? "supplier" : "buyer";
+        const finalRole: "buyer" | "supplier" | "admin" = u.role === "admin" ? "admin" : u.role === "supplier" ? "supplier" : "buyer";
+
+        if (requestedRole === "admin" && finalRole !== "admin") {
+          return { success: false, message: "Access Denied: This account does not possess administrative privileges." };
+        }
 
         const loggedUser: User = {
           id: u.id || "user_" + Math.random().toString(36).substring(2, 8),
           email: u.email,
-          business_name: (u.business_name && !u.business_name.includes("Arbitration") && !u.business_name.includes("Arbiter"))
-            ? u.business_name 
-            : (finalRole === "admin" ? "PayShield Admin" : finalRole === "supplier" ? "Bharat Precision Castings Ltd" : "Apex Auto Components Pvt Ltd"),
+          business_name: finalRole === "admin" ? "PayShield Admin" : (u.business_name || (finalRole === "supplier" ? "Bharat Precision Castings Ltd" : "Apex Auto Components Pvt Ltd")),
           contact_person: u.contact_person || u.full_name || u.name || "Authorized Signatory",
           designation: u.designation || (finalRole === "admin" ? "System Administrator" : finalRole === "buyer" ? "Head of Procurement" : "Managing Director"),
           gst: u.gst || (finalRole === "admin" ? "07AAACT0001A1Z9" : finalRole === "supplier" ? "24AABCB5678B1Z2" : "27AAACA1234A1Z5"),
@@ -142,15 +145,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { success: false, message: data.error || data.message || "Invalid email or password credentials." };
       }
     } catch {
-      // Offline fallback strictly forbidden for Admin role
-      if (inferredRole !== "admin") {
-        for (const d of Object.values(DEMO_ACCOUNTS)) {
-          if (d.email.toLowerCase() === cleanEmail) {
-            setUser(d);
-            return { success: true, message: "Signed in successfully", user: d };
-          }
-        }
-      }
       return { success: false, message: "Invalid credentials or authentication server unreachable." };
     }
   };
