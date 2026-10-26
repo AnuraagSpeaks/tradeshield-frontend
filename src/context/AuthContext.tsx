@@ -4,11 +4,11 @@ import { User } from "../types";
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password?: string) => Promise<{ success: boolean; message?: string }>;
+  login: (email: string, password?: string) => Promise<{ success: boolean; message?: string; user?: User }>;
   register: (userData: Partial<User>) => Promise<{ success: boolean; message?: string; user?: User }>;
   logout: () => void;
   updateUser: (data: Partial<User>) => void;
-  demoLogin: (role: "buyer" | "supplier" | "admin") => void;
+  demoLogin: (role: "buyer" | "supplier") => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -52,22 +52,6 @@ const DEMO_ACCOUNTS: Record<string, User> = {
     pass_id: "PSX-SUPPLIER-389102",
     verified: true,
   },
-  admin: {
-    id: "user_arbiter_1",
-    email: "court@payshieldx.in",
-    business_name: "PayShield Neutral Arbitration Panel",
-    contact_person: "Justice (Retd.) K. N. Verma",
-    designation: "Chief Legal Arbiter",
-    gst: "07AAACT0001A1Z9",
-    pan: "AAACT0001A",
-    mobile: "9811000001",
-    city: "New Delhi",
-    state: "Delhi NCR",
-    category: "Legal & Regulatory Arbitration",
-    role: "admin",
-    pass_id: "PSX-ARBITER-000001",
-    verified: true,
-  },
 };
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -92,33 +76,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [user]);
 
-  const login = async (email: string, password?: string): Promise<{ success: boolean; message?: string }> => {
-    const lowerEmail = email.toLowerCase().trim();
-    const isSupplierEmail = lowerEmail.includes("supplier") || lowerEmail.includes("sales") || lowerEmail.includes("bharat") || lowerEmail.includes("seller") || lowerEmail.includes("castings");
-    const isAdminEmail = lowerEmail.includes("court") || lowerEmail.includes("admin") || lowerEmail.includes("arbiter");
-    const inferredRole: "buyer" | "supplier" | "admin" = isAdminEmail ? "admin" : isSupplierEmail ? "supplier" : "buyer";
-
-    // 1. Check exact match in pre-seeded demo accounts first
-    for (const d of Object.values(DEMO_ACCOUNTS)) {
-      if (d.email.toLowerCase() === lowerEmail) {
-        setUser(d);
-        try {
-          fetch(`${API_BASE}/auth/login`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ email, password, role: d.role }),
-          });
-        } catch {}
-        return { success: true, message: "Signed in successfully (Pre-seeded Account)" };
-      }
+  const login = async (email: string, password?: string): Promise<{ success: boolean; message?: string; user?: User }> => {
+    const cleanEmail = email.toLowerCase().trim();
+    if (!cleanEmail || !cleanEmail.includes("@")) {
+      return { success: false, message: "Please enter a valid email address." };
+    }
+    if (!password) {
+      return { success: false, message: "Password credentials are required." };
     }
 
-    // 2. Try Backend API
+    const isSupplierEmail = cleanEmail.includes("supplier") || cleanEmail.includes("sales") || cleanEmail.includes("bharat") || cleanEmail.includes("seller") || cleanEmail.includes("castings");
+    const isAdminEmail = cleanEmail.includes("court") || cleanEmail.includes("admin") || cleanEmail.includes("arbiter");
+    const inferredRole: "buyer" | "supplier" | "admin" = isAdminEmail ? "admin" : isSupplierEmail ? "supplier" : "buyer";
+
+    // 1. Authenticate strictly against Backend API
     try {
       const res = await fetch(`${API_BASE}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, role: inferredRole }),
+        body: JSON.stringify({ email: cleanEmail, password, role: inferredRole }),
       });
       const data = await res.json();
       if (res.ok && data.data?.user) {
@@ -131,48 +107,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const loggedUser: User = {
           id: u.id || "user_" + Math.random().toString(36).substring(2, 8),
           email: u.email,
-          business_name: u.business_name || (finalRole === "supplier" ? "Bharat Precision Castings Ltd" : "Apex Auto Components Pvt Ltd"),
+          business_name: u.business_name || (finalRole === "admin" ? "PayShield Neutral Arbitration Panel" : finalRole === "supplier" ? "Bharat Precision Castings Ltd" : "Apex Auto Components Pvt Ltd"),
           contact_person: u.contact_person || u.full_name || u.name || "Authorized Signatory",
-          designation: u.designation || (finalRole === "buyer" ? "Head of Procurement" : "Managing Director"),
-          gst: u.gst || (finalRole === "supplier" ? "24AABCB5678B1Z2" : "27AAACA1234A1Z5"),
-          pan: u.pan || (finalRole === "supplier" ? "AABCB5678B" : "AAACA1234A"),
+          designation: u.designation || (finalRole === "admin" ? "Chief Legal Arbiter" : finalRole === "buyer" ? "Head of Procurement" : "Managing Director"),
+          gst: u.gst || (finalRole === "admin" ? "07AAACT0001A1Z9" : finalRole === "supplier" ? "24AABCB5678B1Z2" : "27AAACA1234A1Z5"),
+          pan: u.pan || (finalRole === "admin" ? "AAACT0001A" : finalRole === "supplier" ? "AABCB5678B" : "AAACA1234A"),
           mobile: u.mobile || "9876543210",
-          city: u.city || (finalRole === "supplier" ? "Vadodara" : "Pune"),
-          state: u.state || (finalRole === "supplier" ? "Gujarat" : "Maharashtra"),
-          category: u.category || (finalRole === "supplier" ? "Precision Metal & Foundry" : "Automotive & Heavy Engineering"),
+          city: u.city || (finalRole === "admin" ? "New Delhi" : finalRole === "supplier" ? "Vadodara" : "Pune"),
+          state: u.state || (finalRole === "admin" ? "Delhi NCR" : finalRole === "supplier" ? "Gujarat" : "Maharashtra"),
+          category: u.category || (finalRole === "admin" ? "Neutral Commercial Arbitration" : finalRole === "supplier" ? "Precision Metal & Foundry" : "Automotive & Heavy Engineering"),
           role: finalRole,
-          plan_tier: finalRole === "buyer" ? "buyer_free" : "business",
+          plan_tier: finalRole === "buyer" ? "buyer_free" : finalRole === "supplier" ? "business" : "enterprise",
           pass_id: u.pass_id || ("PSX-" + finalRole.toUpperCase() + "-" + Math.floor(100000 + Math.random() * 900000)),
           verified: true,
           token: data.data.token,
         };
         setUser(loggedUser);
-        return { success: true, message: "Signed in successfully" };
+        return { success: true, message: "Signed in successfully", user: loggedUser };
+      } else {
+        return { success: false, message: data.error || data.message || "Invalid email or password credentials." };
       }
     } catch {
-      // Fallback
+      // Offline fallback strictly forbidden for Admin role
+      if (inferredRole !== "admin") {
+        for (const d of Object.values(DEMO_ACCOUNTS)) {
+          if (d.email.toLowerCase() === cleanEmail) {
+            setUser(d);
+            return { success: true, message: "Signed in successfully", user: d };
+          }
+        }
+      }
+      return { success: false, message: "Invalid credentials or authentication server unreachable." };
     }
-
-    // 3. Auto-create user with accurate role
-    const autoUser: User = {
-      id: "user_" + Math.random().toString(36).substring(2, 8),
-      email: email,
-      business_name: isSupplierEmail ? "Bharat Precision Castings Ltd" : email.split("@")[0].toUpperCase() + " ENTERPRISES",
-      contact_person: isSupplierEmail ? "Rajesh Singhania" : "Authorized Signatory",
-      designation: isSupplierEmail ? "Managing Director" : "Executive Director",
-      gst: isSupplierEmail ? "24AABCB5678B1Z2" : "27AAAAA0000A1Z5",
-      pan: isSupplierEmail ? "AABCB5678B" : "AAAAA0000A",
-      mobile: isSupplierEmail ? "9898123456" : "9876543210",
-      city: isSupplierEmail ? "Vadodara" : "Mumbai",
-      state: isSupplierEmail ? "Gujarat" : "Maharashtra",
-      category: isSupplierEmail ? "Heavy Engineering & Foundries" : "B2B Trade & Commerce",
-      role: inferredRole,
-      plan_tier: inferredRole === "buyer" ? "buyer_free" : "business",
-      pass_id: "PSX-" + inferredRole.toUpperCase() + "-" + Math.floor(100000 + Math.random() * 900000),
-      verified: true,
-    };
-    setUser(autoUser);
-    return { success: true, message: "Signed in successfully" };
   };
 
   const register = async (userData: Partial<User>): Promise<{ success: boolean; message?: string; user?: User }> => {
@@ -228,7 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(updated);
   };
 
-  const demoLogin = (role: "buyer" | "supplier" | "admin") => {
+  const demoLogin = (role: "buyer" | "supplier") => {
     setUser(DEMO_ACCOUNTS[role] || DEMO_ACCOUNTS.buyer);
   };
 

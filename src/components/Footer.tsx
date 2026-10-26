@@ -5,9 +5,10 @@ import { LegalDocType } from './LegalModal';
 interface FooterProps {
   onOpenLegal: (doc: LegalDocType) => void;
   onNavigate: (view: 'landing' | 'dashboard', hash?: string, path?: string) => void;
+  onOpenAuth?: (role: 'buyer' | 'supplier' | 'admin', mode?: 'login' | 'register') => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onOpenLegal, onNavigate }) => {
+export const Footer: React.FC<FooterProps> = ({ onOpenLegal, onNavigate, onOpenAuth }) => {
   return (
     <footer className="border-t border-slate-800/80 bg-slate-950 text-slate-400 text-xs">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
@@ -60,16 +61,20 @@ export const Footer: React.FC<FooterProps> = ({ onOpenLegal, onNavigate }) => {
                 </button>
               </li>
               <li>
-                <a
-                  href="/admin"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    onNavigate('dashboard', undefined, '/admin');
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (onOpenAuth) {
+                      onOpenAuth('admin', 'login');
+                    } else {
+                      onNavigate('dashboard', undefined, '/admin');
+                    }
                   }}
-                  className="hover:text-emerald-400 transition-colors flex items-center gap-1.5 text-amber-400/90 font-mono text-[11px]"
+                  className="hover:text-amber-300 transition-colors flex items-center gap-1.5 text-amber-400 font-mono text-[11px] cursor-pointer"
                 >
-                  <span>⚖️ Arbitration & Admin Desk</span>
-                </a>
+                  <Lock className="w-3 h-3" />
+                  <span>Arbitration & Admin Desk</span>
+                </button>
               </li>
               <li>
                 <a href="#knowledge" onClick={(e) => { e.preventDefault(); onNavigate('landing', '#knowledge'); }} className="hover:text-emerald-400 transition-colors">Knowledge Hub</a>

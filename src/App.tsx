@@ -17,14 +17,14 @@ import { LegalModal, LegalDocType } from "./components/LegalModal";
 import { AuthOnboardingModal } from "./components/AuthOnboardingModal";
 
 const AppContent: React.FC = () => {
-  const { user, isAuthenticated, demoLogin } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [currentView, setCurrentView] = useState<"landing" | "dashboard">("landing");
   const [legalModalOpen, setLegalModalOpen] = useState<boolean>(false);
   const [activeLegalDoc, setActiveLegalDoc] = useState<LegalDocType>("terms");
 
   // Auth & Onboarding Modal
   const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
-  const [authRole, setAuthRole] = useState<"buyer" | "supplier">("buyer");
+  const [authRole, setAuthRole] = useState<"buyer" | "supplier" | "admin">("buyer");
   const [authMode, setAuthMode] = useState<"register" | "login">("login");
 
   // Unified Navigation & URL state sync
@@ -45,8 +45,12 @@ const AppContent: React.FC = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } else {
-      if (path === "/admin" && (!user || user.role !== "admin")) {
-        demoLogin("admin");
+      if ((path === "/admin" || path === "/court" || path === "/arbiter") && (!user || user.role !== "admin")) {
+        setCurrentView("landing");
+        setAuthRole("admin");
+        setAuthMode("login");
+        setAuthModalOpen(true);
+        return;
       }
       setCurrentView("dashboard");
       const targetPath = path || (user?.role === "admin" ? "/admin" : "/dashboard");
@@ -69,7 +73,11 @@ const AppContent: React.FC = () => {
         hash.includes("arbiter")
       ) {
         if (!user || user.role !== "admin") {
-          demoLogin("admin");
+          setCurrentView("landing");
+          setAuthRole("admin");
+          setAuthMode("login");
+          setAuthModalOpen(true);
+          return;
         }
         setCurrentView("dashboard");
       } else if (path.startsWith("/dashboard") || path.startsWith("/portal")) {
@@ -91,14 +99,14 @@ const AppContent: React.FC = () => {
     handleUrlRouting();
     window.addEventListener("popstate", handleUrlRouting);
     return () => window.removeEventListener("popstate", handleUrlRouting);
-  }, []);
+  }, [user]);
 
   const openLegalDoc = (doc: LegalDocType) => {
     setActiveLegalDoc(doc);
     setLegalModalOpen(true);
   };
 
-  const handleRoleSelect = (role: "buyer" | "supplier" = "buyer") => {
+  const handleRoleSelect = (role: "buyer" | "supplier" | "admin" = "buyer") => {
     if (isAuthenticated && user) {
       if (user.role !== role) {
         setAuthRole(role);
@@ -171,6 +179,11 @@ const AppContent: React.FC = () => {
       <Footer
         onOpenLegal={openLegalDoc}
         onNavigate={navigateTo}
+        onOpenAuth={(role, mode) => {
+          setAuthRole(role);
+          setAuthMode(mode || "login");
+          setAuthModalOpen(true);
+        }}
       />
 
       <LegalModal
