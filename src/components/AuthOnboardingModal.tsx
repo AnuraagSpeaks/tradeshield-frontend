@@ -16,7 +16,8 @@ import {
   RotateCcw,
   Loader2,
   ArrowLeft,
-  ExternalLink
+  ExternalLink,
+  Copy
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { verifyGSTIN, sendEmailOTP, verifyEmailOTP, resetPasswordAPI } from "../api/client";
@@ -703,61 +704,47 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                     2. Company & Tax Identity:
                   </label>
 
-                  {/* GSTIN with live verify */}
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">GSTIN (15 Digits) or PAN</label>
-                    <div className="flex gap-2">
+                  {/* GSTIN with Official Govt Verification */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">GSTIN (15 Digits) or PAN *</label>
+                      <span className="text-[10px] text-slate-400 font-mono">services.gst.gov.in</span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row gap-2">
                       <input
                         type="text"
                         required
                         value={gstin}
                         onChange={(e) => {
-                          setGstin(e.target.value.toUpperCase());
-                          setGstVerifiedData(null);
+                          const val = e.target.value.toUpperCase();
+                          setGstin(val);
+                          if (val.length >= 12 && (!pan || pan.length < 10)) {
+                            setPan(val.substring(2, 12));
+                          }
                         }}
                         placeholder="E.g., 07AAAAA1111A1ZA"
                         className="flex-1 px-3.5 py-2.5 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 font-mono text-xs text-slate-900 dark:text-white uppercase focus:border-blue-500 focus:outline-none"
                       />
                       <button
                         type="button"
-                        onClick={handleGSTVerify}
-                        disabled={isGstVerifying || !gstin}
-                        className="px-4 py-2.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-800 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-bold transition-all cursor-pointer flex items-center gap-1 disabled:opacity-50"
+                        onClick={handleOpenGovtGst}
+                        disabled={!gstin}
+                        className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-sm disabled:opacity-50"
+                        title="Copies entered GSTIN to clipboard and opens the official taxpayer search on services.gst.gov.in"
                       >
-                        {isGstVerifying ? "Verifying..." : "Verify GST"}
+                        <Copy className="w-3.5 h-3.5" />
+                        <span>Copy & Check on GST Portal ↗</span>
                       </button>
                     </div>
 
-                    {/* Official Govt GST Portal Direct Action */}
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1 text-[11px]">
-                      <span className="text-slate-500 dark:text-slate-400">Want live government records?</span>
-                      <button
-                        type="button"
-                        onClick={handleOpenGovtGst}
-                        className="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline cursor-pointer self-start sm:self-auto"
-                        title="Copies entered GSTIN to clipboard and opens official GST portal"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        <span>Check on Official GST Portal (services.gst.gov.in) ↗</span>
-                      </button>
-                    </div>
+                    <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                      Click to copy your GSTIN and open the official GST portal. Press Paste (Ctrl+V / Cmd+V) & complete the captcha to view your legal registered entity details.
+                    </p>
 
                     {gstFeedbackToast && (
-                      <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-500/30 text-blue-800 dark:text-blue-300 text-xs flex items-center gap-2 animate-in fade-in">
-                        <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                      <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in">
+                        <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                         <span>{gstFeedbackToast}</span>
-                      </div>
-                    )}
-
-                    {gstVerifiedData && (
-                      <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between mt-1">
-                        <div className="flex items-center gap-2">
-                          <Check className="w-4 h-4 text-emerald-600" />
-                          <span><strong>Verified:</strong> {gstVerifiedData.legal_name}</span>
-                        </div>
-                        <span className="font-mono font-bold text-[11px] bg-emerald-100 dark:bg-emerald-900 px-2 py-0.5 rounded">
-                          Score: {gstVerifiedData.trust_score}%
-                        </span>
                       </div>
                     )}
                   </div>

@@ -42,7 +42,8 @@ import {
   Eye,
   Printer,
   Sparkles,
-  ExternalLink
+  ExternalLink,
+  Copy
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
@@ -1084,80 +1085,73 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         </div>
       )}
 
-      {/* KYC / GSTIN Simulator Tab */}
+      {/* KYC / GSTIN Official Verifier Tab */}
       {activeTab === "kyc" && (
         <div className="max-w-xl mx-auto p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl space-y-6">
           <div>
-            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">GSTIN & Bank Penny-Drop Verifier</h2>
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Taxpayer Identity & GSTIN Check</h2>
+            </div>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-              Verify counterparty identity in real-time before drafting contracts or releasing advances.
+              Verify counterparty GST registration and tax compliance directly on the Government of India portal before drafting proposals or releasing escrow funds.
             </p>
           </div>
 
           <div className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Enter 15-Digit GSTIN</label>
-              <div className="flex gap-2">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">Enter 15-Digit GSTIN</label>
+                <span className="text-[10px] text-slate-400 font-mono">services.gst.gov.in</span>
+              </div>
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={kycGstInput}
                   onChange={(e) => {
                     setKycGstInput(e.target.value.toUpperCase());
-                    setKycResult(null);
                   }}
                   placeholder="E.g., 27AAACA1234A1Z5"
                   className="flex-1 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:border-blue-500 focus:outline-none"
                 />
                 <button
-                  onClick={handleVerifyKYC}
-                  className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all cursor-pointer shrink-0"
-                >
-                  Verify
-                </button>
-              </div>
-
-              {/* Direct Official GST Portal Link */}
-              <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
-                <span className="text-slate-500 dark:text-slate-400">Official Government Verification:</span>
-                <button
                   type="button"
                   onClick={() => {
                     const res = openOfficialGSTPortal(kycGstInput);
                     setKycGstToast(res.message);
-                    setTimeout(() => setKycGstToast(""), 5500);
+                    setTimeout(() => setKycGstToast(""), 6000);
                   }}
-                  className="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline cursor-pointer"
-                  title="Copies entered GSTIN to clipboard and opens official GST portal"
+                  disabled={!kycGstInput}
+                  className="px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shrink-0 shadow-sm disabled:opacity-50"
+                  title="Copies GSTIN to clipboard and opens services.gst.gov.in"
                 >
-                  <ExternalLink className="w-3.5 h-3.5" />
-                  <span>Check on services.gst.gov.in ↗</span>
+                  <Copy className="w-3.5 h-3.5" />
+                  <span>Copy & Check on GST Portal ↗</span>
                 </button>
               </div>
 
+              <p className="text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+                Click to copy the GSTIN and launch <strong>services.gst.gov.in</strong>. Paste (Ctrl+V) and complete the captcha to view live return filing history and active taxpayer status.
+              </p>
+
               {kycGstToast && (
-                <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-500/30 text-blue-800 dark:text-blue-300 text-xs flex items-center gap-2 animate-in fade-in">
-                  <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                <div className="p-3.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center gap-2 animate-in fade-in">
+                  <Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
                   <span>{kycGstToast}</span>
                 </div>
               )}
             </div>
 
-            {kycResult && (
-              <div className="p-5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 space-y-3 animate-in fade-in zoom-in-95 duration-150">
-                <div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-400 font-bold text-xs">
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>GSTIN VERIFICATION SUCCESSFUL</span>
-                </div>
-                <div>
-                  <span className="text-[11px] text-slate-500 dark:text-slate-400">Registered Legal Name:</span>
-                  <p className="font-bold text-slate-900 dark:text-white text-sm">{kycResult.legal_name}</p>
-                </div>
-                <div className="flex items-center justify-between text-xs pt-2 border-t border-emerald-200 dark:border-emerald-500/20">
-                  <span className="text-slate-600 dark:text-slate-300">PayShield Trust Score:</span>
-                  <span className="font-bold font-mono text-emerald-700 dark:text-emerald-400">{kycResult.trust_score}/100 (Tier 1 Verified)</span>
-                </div>
-              </div>
-            )}
+            {/* Transparent Guidance Card */}
+            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs space-y-2">
+              <span className="font-bold text-slate-800 dark:text-slate-200 block">How to verify on the official portal:</span>
+              <ol className="list-decimal list-inside text-slate-600 dark:text-slate-400 space-y-1 text-[11px] leading-relaxed">
+                <li>Click <strong>Copy & Check on GST Portal ↗</strong> above.</li>
+                <li>On the GST portal tab, right-click and paste (or press <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono text-[10px]">Ctrl+V</kbd> / <kbd className="px-1.5 py-0.5 rounded bg-slate-200 dark:bg-slate-800 font-mono text-[10px]">Cmd+V</kbd>).</li>
+                <li>Enter the 4-character security image captcha and click <strong>Search</strong>.</li>
+                <li>Confirm the counterparty's <strong>Legal Name of Business</strong>, <strong>Trade Name</strong>, and <strong>Taxpayer Type</strong> before locking deals.</li>
+              </ol>
+            </div>
           </div>
         </div>
       )}
