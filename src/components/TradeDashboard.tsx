@@ -41,13 +41,15 @@ import {
   PlusCircle,
   Eye,
   Printer,
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { DocumentViewerModal } from "./DocumentViewerModal";
 import { ProposalViewerModal } from "./ProposalViewerModal";
 import { AdminExecutiveDashboard } from "./AdminExecutiveDashboard";
+import { openOfficialGSTPortal } from "../utils/gstHelper";
 
 interface TradeDashboardProps {
   onOpenAuth?: (role: "buyer" | "supplier", mode: "login" | "register") => void;
@@ -117,6 +119,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   // KYC Simulator State
   const [kycGstInput, setKycGstInput] = useState("27AAACA1234A1Z5");
   const [kycResult, setKycResult] = useState<{ valid: boolean; legal_name: string; trust_score: number } | null>(null);
+  const [kycGstToast, setKycGstToast] = useState("");
 
   const loadData = async () => {
     setLoading(true);
@@ -1098,7 +1101,10 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
                 <input
                   type="text"
                   value={kycGstInput}
-                  onChange={(e) => setKycGstInput(e.target.value.toUpperCase())}
+                  onChange={(e) => {
+                    setKycGstInput(e.target.value.toUpperCase());
+                    setKycResult(null);
+                  }}
                   placeholder="E.g., 27AAACA1234A1Z5"
                   className="flex-1 px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-slate-900 dark:text-white font-mono text-xs focus:border-blue-500 focus:outline-none"
                 />
@@ -1109,6 +1115,31 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
                   Verify
                 </button>
               </div>
+
+              {/* Direct Official GST Portal Link */}
+              <div className="pt-1 flex flex-col sm:flex-row sm:items-center justify-between gap-1 text-[11px]">
+                <span className="text-slate-500 dark:text-slate-400">Official Government Verification:</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const res = openOfficialGSTPortal(kycGstInput);
+                    setKycGstToast(res.message);
+                    setTimeout(() => setKycGstToast(""), 5500);
+                  }}
+                  className="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline cursor-pointer"
+                  title="Copies entered GSTIN to clipboard and opens official GST portal"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Check on services.gst.gov.in ↗</span>
+                </button>
+              </div>
+
+              {kycGstToast && (
+                <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-500/30 text-blue-800 dark:text-blue-300 text-xs flex items-center gap-2 animate-in fade-in">
+                  <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span>{kycGstToast}</span>
+                </div>
+              )}
             </div>
 
             {kycResult && (

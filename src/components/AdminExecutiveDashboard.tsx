@@ -50,6 +50,7 @@ import {
   fetchLedgerJournals
 } from "../api/client";
 import { KycDocumentModal, KycDocData } from "./KycDocumentModal";
+import { openOfficialGSTPortal } from "../utils/gstHelper";
 
 export const AdminExecutiveDashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"overview" | "buyers" | "suppliers" | "finance" | "disputes" | "ledger">("overview");
@@ -698,6 +699,19 @@ export const AdminExecutiveDashboard: React.FC = () => {
                       </button>
                     </div>
                     <p className="text-emerald-600 font-bold font-sans">KYC Status: {selectedBuyer.kyc_status}</p>
+                    <div className="pt-1.5 border-t border-slate-200 dark:border-slate-800 flex justify-end font-sans">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const res = openOfficialGSTPortal(selectedBuyer.gstin);
+                          showNotification(res.message);
+                        }}
+                        className="text-[11px] text-indigo-600 dark:text-indigo-400 hover:underline font-bold cursor-pointer inline-flex items-center gap-1"
+                        title="Copies buyer GSTIN and opens official GST portal"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Verify on services.gst.gov.in ↗
+                      </button>
+                    </div>
                   </div>
                 </div>
 
@@ -917,6 +931,21 @@ export const AdminExecutiveDashboard: React.FC = () => {
                     <h3 className="text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
                       {selectedSupplier.company_name}
                     </h3>
+                    <div className="flex flex-wrap items-center gap-3 text-xs text-slate-500 font-mono mt-1">
+                      <span>GSTIN: <strong className="text-slate-800 dark:text-slate-200">{selectedSupplier.gstin}</strong></span>
+                      <span>PAN: <strong className="text-slate-800 dark:text-slate-200">{selectedSupplier.pan}</strong></span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const res = openOfficialGSTPortal(selectedSupplier.gstin);
+                          showNotification(res.message);
+                        }}
+                        className="inline-flex items-center gap-1 text-indigo-600 dark:text-indigo-400 font-bold hover:underline cursor-pointer font-sans"
+                        title="Copies supplier GSTIN to clipboard and opens official GST portal"
+                      >
+                        <ExternalLink className="w-3 h-3" /> Verify on services.gst.gov.in ↗
+                      </button>
+                    </div>
                   </div>
                   <button
                     onClick={() => setSelectedSupplier(null)}

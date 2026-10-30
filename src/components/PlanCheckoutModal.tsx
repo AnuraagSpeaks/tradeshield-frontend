@@ -12,7 +12,8 @@ import {
   Download, 
   Sparkles,
   Zap,
-  AlertCircle
+  AlertCircle,
+  ExternalLink
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { 
@@ -22,6 +23,7 @@ import {
   verifyRazorpayPayment 
 } from "../api/client";
 import { generateAndDownloadGSTInvoice } from "../utils/invoiceGenerator";
+import { openOfficialGSTPortal } from "../utils/gstHelper";
 
 export interface PlanDetails {
   id: "buyer_free" | "growth" | "business" | "enterprise";
@@ -160,6 +162,7 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
   const [city, setCity] = useState(user?.city || "Mumbai");
   const [subId, setSubId] = useState("");
   const [isVerifyingGst, setIsVerifyingGst] = useState(false);
+  const [gstToast, setGstToast] = useState("");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
@@ -568,6 +571,30 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
                         {isVerifyingGst ? "..." : "Verify"}
                       </button>
                     </div>
+
+                    <div className="flex items-center justify-between text-[11px] pt-1">
+                      <span className="text-slate-500">Official Portal Check:</span>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const res = openOfficialGSTPortal(gstin);
+                          setGstToast(res.message);
+                          setTimeout(() => setGstToast(""), 5000);
+                        }}
+                        className="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
+                        title="Copies GSTIN to clipboard and opens official GST portal"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>services.gst.gov.in ↗</span>
+                      </button>
+                    </div>
+
+                    {gstToast && (
+                      <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-500/30 text-blue-800 dark:text-blue-300 text-[11px] flex items-center gap-1.5 animate-in fade-in">
+                        <Check className="w-3.5 h-3.5 text-blue-600 shrink-0" />
+                        <span>{gstToast}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 

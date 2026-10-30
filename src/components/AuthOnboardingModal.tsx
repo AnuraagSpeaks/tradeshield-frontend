@@ -15,10 +15,12 @@ import {
   KeyRound,
   RotateCcw,
   Loader2,
-  ArrowLeft
+  ArrowLeft,
+  ExternalLink
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { verifyGSTIN, sendEmailOTP, verifyEmailOTP, resetPasswordAPI } from "../api/client";
+import { openOfficialGSTPortal } from "../utils/gstHelper";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -63,6 +65,7 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
   // Verification state
   const [isGstVerifying, setIsGstVerifying] = useState(false);
   const [gstVerifiedData, setGstVerifiedData] = useState<{ valid: boolean; legal_name: string; trust_score: number } | null>(null);
+  const [gstFeedbackToast, setGstFeedbackToast] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [infoMsg, setInfoMsg] = useState("");
@@ -129,6 +132,12 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
     } finally {
       setIsGstVerifying(false);
     }
+  };
+
+  const handleOpenGovtGst = () => {
+    const res = openOfficialGSTPortal(gstin);
+    setGstFeedbackToast(res.message);
+    setTimeout(() => setGstFeedbackToast(""), 5500);
   };
 
   // Step 1 of Registration: Validate and Send Email OTP
@@ -718,6 +727,27 @@ export const AuthOnboardingModal: React.FC<AuthModalProps> = ({
                         {isGstVerifying ? "Verifying..." : "Verify GST"}
                       </button>
                     </div>
+
+                    {/* Official Govt GST Portal Direct Action */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 pt-1 text-[11px]">
+                      <span className="text-slate-500 dark:text-slate-400">Want live government records?</span>
+                      <button
+                        type="button"
+                        onClick={handleOpenGovtGst}
+                        className="inline-flex items-center gap-1 font-bold text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 hover:underline cursor-pointer self-start sm:self-auto"
+                        title="Copies entered GSTIN to clipboard and opens official GST portal"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>Check on Official GST Portal (services.gst.gov.in) ↗</span>
+                      </button>
+                    </div>
+
+                    {gstFeedbackToast && (
+                      <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-500/30 text-blue-800 dark:text-blue-300 text-xs flex items-center gap-2 animate-in fade-in">
+                        <Check className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                        <span>{gstFeedbackToast}</span>
+                      </div>
+                    )}
 
                     {gstVerifiedData && (
                       <div className="p-2.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs flex items-center justify-between mt-1">
