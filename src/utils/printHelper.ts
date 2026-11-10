@@ -1,3 +1,21 @@
+export function escapeHtml(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function sanitizeHtml(html: string): string {
+  return html
+    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, "")
+    .replace(/on\w+\s*=\s*(["'])[\s\S]*?\1/gi, "")
+    .replace(/on\w+\s*=\s*[^>\s]+/gi, "")
+    .replace(/href\s*=\s*(["'])javascript:[\s\S]*?\1/gi, 'href="#"');
+}
+
 /**
  * printElement - Prints only the targeted DOM element cleanly in an isolated frame/window.
  * Guarantees:
@@ -23,7 +41,8 @@ export function printElement(elementIdOrRef: HTMLElement | string, docTitle?: st
     .map((s) => s.outerHTML)
     .join("\n");
 
-  const title = docTitle || "PayShieldX Verified Document";
+  const title = escapeHtml(docTitle || "PayShieldX Verified Document");
+  const sanitizedContent = sanitizeHtml(element.innerHTML);
 
   // Create an isolated hidden iframe
   const iframe = document.createElement("iframe");
@@ -82,7 +101,7 @@ export function printElement(elementIdOrRef: HTMLElement | string, docTitle?: st
       </head>
       <body>
         <div class="print-container">
-          ${element.innerHTML}
+          ${sanitizedContent}
         </div>
       </body>
     </html>

@@ -16,6 +16,16 @@ export interface InvoiceData {
   totalAmount: number;
 }
 
+export function escapeHtml(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
 export function generateAndDownloadGSTInvoice(data: InvoiceData) {
   const sellerStateCode = "20"; // S.S. Enterprises (GSTIN: 20KBIPS8898M1ZG)
   const isInterstate = data.customerGst ? !data.customerGst.startsWith(sellerStateCode) : true;
@@ -23,12 +33,23 @@ export function generateAndDownloadGSTInvoice(data: InvoiceData) {
   const sgstAmount = isInterstate ? 0 : Math.round(data.basePrice * 0.09);
   const igstAmount = isInterstate ? Math.round(data.basePrice * 0.18) : 0;
 
+  const invNum = escapeHtml(data.invoiceNumber);
+  const invDate = escapeHtml(data.date);
+  const subRef = escapeHtml(data.subscriptionRef);
+  const custName = escapeHtml(data.customerName || "Verified Business Entity");
+  const custGst = escapeHtml(data.customerGst || "07AAAAA1111A1ZA");
+  const custEmail = escapeHtml(data.customerEmail);
+  const custPhone = escapeHtml(data.customerPhone);
+  const custCity = escapeHtml(data.customerCity || "New Delhi, India");
+  const planName = escapeHtml(data.planName);
+  const billingCycle = escapeHtml(data.billingCycle);
+
   const invoiceHtml = `
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Tax Invoice - ${data.invoiceNumber}</title>
+  <title>Tax Invoice - ${invNum}</title>
   <style>
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 30px; color: #1e293b; background: #fff; }
     .invoice-card { max-width: 800px; margin: 0 auto; border: 1px solid #cbd5e1; border-radius: 12px; padding: 32px; box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1); }
@@ -64,21 +85,21 @@ export function generateAndDownloadGSTInvoice(data: InvoiceData) {
       </div>
       <div class="invoice-meta">
         <h2>TAX INVOICE</h2>
-        <p><strong>Invoice No:</strong> ${data.invoiceNumber}</p>
-        <p><strong>Date of Issue:</strong> ${data.date}</p>
-        <p><strong>Ref / Sub ID:</strong> ${data.subscriptionRef}</p>
-        <p><strong>Place of Supply:</strong> ${data.customerCity || "India"}</p>
+        <p><strong>Invoice No:</strong> ${invNum}</p>
+        <p><strong>Date of Issue:</strong> ${invDate}</p>
+        <p><strong>Ref / Sub ID:</strong> ${subRef}</p>
+        <p><strong>Place of Supply:</strong> ${custCity}</p>
       </div>
     </div>
 
     <div class="grid">
       <div class="box">
         <strong>BILLED TO (CUSTOMER):</strong>
-        <div><strong>${data.customerName || "Verified Business Entity"}</strong></div>
-        <div>GSTIN: <strong>${data.customerGst || "07AAAAA1111A1ZA"}</strong></div>
-        <div>Email: ${data.customerEmail}</div>
-        <div>Mobile: ${data.customerPhone}</div>
-        <div>City/State: ${data.customerCity || "New Delhi, India"}</div>
+        <div><strong>${custName}</strong></div>
+        <div>GSTIN: <strong>${custGst}</strong></div>
+        <div>Email: ${custEmail}</div>
+        <div>Mobile: ${custPhone}</div>
+        <div>City/State: ${custCity}</div>
       </div>
       <div class="box">
         <strong>PAYMENT & ESCROW PARTICULARS:</strong>
@@ -103,13 +124,13 @@ export function generateAndDownloadGSTInvoice(data: InvoiceData) {
         <tr>
           <td>1</td>
           <td>
-            <strong>${data.planName}</strong>
+            <strong>${planName}</strong>
             <div style="color:#64748b; font-size:11px; margin-top:2px;">
               Trade Protection Escrow Gateway, Dual-Approval Agreement System, and Neutral Legal Arbitration Access.
             </div>
           </td>
           <td>998439</td>
-          <td style="text-transform: capitalize;">${data.billingCycle}</td>
+          <td style="text-transform: capitalize;">${billingCycle}</td>
           <td class="text-right">₹${data.basePrice.toLocaleString("en-IN")}</td>
         </tr>
       </tbody>

@@ -44,7 +44,8 @@ import {
   Sparkles,
   ExternalLink,
   Copy,
-  Search
+  Search,
+  Loader2
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
@@ -91,6 +92,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNa
     isAdmin ? "disputes" : !isSupplier ? "proposals" : "contracts"
   );
   const [loading, setLoading] = useState<boolean>(true);
+  const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   // Supplier Proposal Form State
   const [propBuyerName, setPropBuyerName] = useState("Apex Auto Components Pvt Ltd");
@@ -182,10 +184,19 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNa
   }, [user]);
 
   const handleApproveMilestone = async (mId: string) => {
-    await approveMilestone(mId);
-    setActionSuccessMsg("✅ Milestone approved! Funds released from Escrow Vault to Supplier bank account.");
-    loadData();
-    setTimeout(() => setActionSuccessMsg(""), 5000);
+    if (actionLoadingId) return;
+    setActionLoadingId(`milestone-${mId}`);
+    try {
+      await approveMilestone(mId);
+      setActionSuccessMsg("✅ Milestone approved! Funds released from Escrow Vault to Supplier bank account.");
+      await loadData();
+      setTimeout(() => setActionSuccessMsg(""), 5000);
+    } catch (err: any) {
+      console.error("handleApproveMilestone error:", err);
+      setActionSuccessMsg(`⚠️ Failed to approve milestone: ${err?.message || "Operation failed"}`);
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   const handleSubmitProof = async (e: React.FormEvent) => {
@@ -243,13 +254,22 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNa
   };
 
   const handleApproveProposal = async (proposalId: string) => {
-    const success = await approveProposal(proposalId, "buyer");
-    if (success) {
-      setProposalModalOpen(false);
-      setActionSuccessMsg("🛡️ Proposal Approved & Escrow Funds Locked! Deal converted into an Active Escrow Contract.");
-      await loadData();
-      setActiveTab("contracts");
-      setTimeout(() => setActionSuccessMsg(""), 7000);
+    if (actionLoadingId) return;
+    setActionLoadingId(`proposal-${proposalId}`);
+    try {
+      const success = await approveProposal(proposalId, "buyer");
+      if (success) {
+        setProposalModalOpen(false);
+        setActionSuccessMsg("🛡️ Proposal Approved & Escrow Funds Locked! Deal converted into an Active Escrow Contract.");
+        await loadData();
+        setActiveTab("contracts");
+        setTimeout(() => setActionSuccessMsg(""), 7000);
+      }
+    } catch (err: any) {
+      console.error("handleApproveProposal error:", err);
+      setActionSuccessMsg(`⚠️ Error approving proposal: ${err?.message || "Operation failed"}`);
+    } finally {
+      setActionLoadingId(null);
     }
   };
 
@@ -268,14 +288,22 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNa
   };
 
   const handleExecuteVerdict = async () => {
-    if (!verdictDispute) return;
-    const totalClaim = verdictDispute.claim_amount;
-    const buyerShare = verdictType === "REFUND_BUYER" ? totalClaim : verdictType === "SPLIT_50_50" ? totalClaim * 0.5 : 0;
-    const sellerShare = verdictType === "RELEASE_SUPPLIER" ? totalClaim : verdictType === "SPLIT_50_50" ? totalClaim * 0.5 : 0;
-    await arbitrateDispute(verdictDispute.id, verdictType, buyerShare, sellerShare);
-    setArbitrationModalOpen(false);
-    alert(`Arbitration Decree Executed! Verdict: ${verdictType === "REFUND_BUYER" ? "100% Refund to Buyer" : verdictType === "RELEASE_SUPPLIER" ? "100% Release to Supplier" : "50/50 Split Settlement"}. Escrow Ledger Updated.`);
-    loadData();
+    if (!verdictDispute || actionLoadingId) return;
+    setActionLoadingId(`verdict-${verdictDispute.id}`);
+    try {
+      const totalClaim = verdictDispute.claim_amount;
+      const buyerShare = verdictType === "REFUND_BUYER" ? totalClaim : verdictType === "SPLIT_50_50" ? totalClaim * 0.5 : 0;
+      const sellerShare = verdictType === "RELEASE_SUPPLIER" ? totalClaim : verdictType === "SPLIT_50_50" ? totalClaim * 0.5 : 0;
+      await arbitrateDispute(verdictDispute.id, verdictType, buyerShare, sellerShare);
+      setArbitrationModalOpen(false);
+      alert(`Arbitration Decree Executed! Verdict: ${verdictType === "REFUND_BUYER" ? "100% Refund to Buyer" : verdictType === "RELEASE_SUPPLIER" ? "100% Release to Supplier" : "50/50 Split Settlement"}. Escrow Ledger Updated.`);
+      await loadData();
+    } catch (err: any) {
+      console.error("handleExecuteVerdict error:", err);
+      alert(`Error executing verdict: ${err?.message || "Failed"}`);
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   const handleVerifyKYC = async () => {
@@ -697,11 +725,16 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNa
                             </button>
 
                             <button
+                              disabled={actionLoadingId === `milestone-${m.id}`}
                               onClick={() => handleApproveMilestone(m.id)}
-                              className="px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-emerald-500/20"
+                              className={`px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-500 dark:to-teal-500 text-white dark:text-slate-950 font-bold text-xs flex items-center gap-1.5 transition-all shadow-md shadow-emerald-500/20 ${actionLoadingId === `milestone-${m.id}` ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
                             >
-                              <Check className="w-3.5 h-3.5" />
-                              <span>Approve & Release Funds</span>
+                              {actionLoadingId === `milestone-${m.id}` ? (
+                                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                              ) : (
+                                <Check className="w-3.5 h-3.5" />
+                              )}
+                              <span>{actionLoadingId === `milestone-${m.id}` ? "Releasing..." : "Approve & Release Funds"}</span>
                             </button>
                           </>
                         )}
@@ -863,11 +896,16 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNa
 
                     {!isApproved && (
                       <button
+                        disabled={actionLoadingId === `proposal-${p.id}`}
                         onClick={() => handleApproveProposal(p.id)}
-                        className="flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-blue-600/20 cursor-pointer"
+                        className={`flex-1 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-md shadow-blue-600/20 ${actionLoadingId === `proposal-${p.id}` ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
                       >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>Approve & Fund Escrow</span>
+                        {actionLoadingId === `proposal-${p.id}` ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                        )}
+                        <span>{actionLoadingId === `proposal-${p.id}` ? "Approving..." : "Approve & Fund Escrow"}</span>
                       </button>
                     )}
                   </div>
@@ -1477,11 +1515,16 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNa
 
               <button
                 type="button"
+                disabled={actionLoadingId === `verdict-${verdictDispute.id}`}
                 onClick={handleExecuteVerdict}
-                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all cursor-pointer"
+                className={`w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg shadow-purple-500/20 transition-all ${actionLoadingId === `verdict-${verdictDispute.id}` ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
               >
-                <Gavel className="w-4 h-4" />
-                <span>Pronounce Legal Decree & Adjust Nodal Ledger</span>
+                {actionLoadingId === `verdict-${verdictDispute.id}` ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Gavel className="w-4 h-4" />
+                )}
+                <span>{actionLoadingId === `verdict-${verdictDispute.id}` ? "Executing Decree..." : "Pronounce Legal Decree & Adjust Nodal Ledger"}</span>
               </button>
             </div>
           </div>

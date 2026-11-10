@@ -1,6 +1,6 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef, useEffect, useState } from "react";
 import { Proposal } from "../types";
-import { X, Printer, ShieldCheck, CheckCircle2, Building2 } from "lucide-react";
+import { X, Printer, ShieldCheck, CheckCircle2, Building2, Loader2 } from "lucide-react";
 import { printElement } from "../utils/printHelper";
 
 interface ProposalViewerModalProps {
@@ -43,6 +43,17 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
   isBuyer = false,
 }) => {
   const printAreaRef = useRef<HTMLDivElement>(null);
+  const [approving, setApproving] = useState(false);
+
+  const handleApproveClick = async () => {
+    if (approving || !onApprove || !proposal) return;
+    setApproving(true);
+    try {
+      await onApprove(proposal.id);
+    } finally {
+      setApproving(false);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -111,11 +122,16 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
 
             {isBuyer && !isApproved && onApprove && (
               <button
-                onClick={() => onApprove(proposal.id)}
-                className="flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/30 cursor-pointer"
+                disabled={approving}
+                onClick={handleApproveClick}
+                className={`flex items-center gap-1.5 px-3 sm:px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-all shadow-md shadow-blue-600/30 ${approving ? "opacity-60 cursor-not-allowed" : "cursor-pointer"}`}
               >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Approve & Fund Escrow</span>
+                {approving ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                )}
+                <span>{approving ? "Approving..." : "Approve & Fund Escrow"}</span>
               </button>
             )}
 
