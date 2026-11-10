@@ -44,6 +44,18 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
 }) => {
   const printAreaRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen || !proposal) return null;
 
   const rawBase = proposal.base_amount || (Number(proposal.amount || 0) > 0 ? Number(proposal.amount) / 1.18 : 250000);
@@ -67,18 +79,6 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
       window.print();
     }
   };
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
-      }
-    };
-    if (isOpen) {
-      window.addEventListener("keydown", handleKeyDown);
-    }
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [isOpen, onClose]);
 
   return (
     <div 
