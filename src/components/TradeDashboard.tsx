@@ -168,34 +168,44 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
 
   const handleCreateProposalSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const created = await createProposal({
-      buyer_name: propBuyerName,
-      buyer_signatory: propBuyerSignatory,
-      buyer_email: propBuyerEmail,
-      buyer_gstin: propBuyerGSTIN,
-      buyer_address: propBuyerAddress,
-      supplier_name: user?.business_name || "Bharat Precision Castings Ltd",
-      supplier_signatory: user?.contact_person || user?.full_name || "Rajesh Singhania",
-      supplier_email: user?.email || "sales@bharatcastings.com",
-      supplier_gstin: user?.gst || "24AABCB5678B1Z2",
-      supplier_address: user ? `${user.business_name}, ${user.city || "Vadodara"}, India` : "Survey No. 118, GIDC Makarpura Industrial Estate, Vadodara, Gujarat 390010",
-      item_description: propItemDesc,
-      base_amount: propBaseAmount,
-      discount_percent: propDiscountPct,
-      tax_percent: propTaxPct,
-      milestones_summary: propMilestonesSum,
-      delivery_timeline: propDeliveryTimeline,
-      terms: propSpecialTerms,
-      notes: "Auto-generated official Trade Deal Proposal with PayShieldX Escrow Protection",
-    });
+    try {
+      const created = await createProposal({
+        buyer_name: propBuyerName,
+        buyer_signatory: propBuyerSignatory,
+        buyer_email: propBuyerEmail,
+        buyer_gstin: propBuyerGSTIN,
+        buyer_address: propBuyerAddress,
+        supplier_name: user?.business_name || "Bharat Precision Castings Ltd",
+        supplier_signatory: user?.contact_person || user?.full_name || "Rajesh Singhania",
+        supplier_email: user?.email || "sales@bharatcastings.com",
+        supplier_gstin: user?.gst || "24AABCB5678B1Z2",
+        supplier_address: user ? `${user.business_name}, ${user.city || "Vadodara"}, India` : "Survey No. 118, GIDC Makarpura Industrial Estate, Vadodara, Gujarat 390010",
+        item_description: propItemDesc,
+        base_amount: propBaseAmount,
+        discount_percent: propDiscountPct,
+        tax_percent: propTaxPct,
+        milestones_summary: propMilestonesSum,
+        delivery_timeline: propDeliveryTimeline,
+        terms: propSpecialTerms,
+        notes: "Auto-generated official Trade Deal Proposal with PayShieldX Escrow Protection",
+      });
 
-    if (created) {
-      setActionSuccessMsg(`✅ Proposal #${created.proposal_number || created.id} successfully created & Acknowledgement Email dispatched to ${propBuyerEmail || "Buyer"}!`);
-      setSelectedProposal(created);
-      setProposalModalOpen(true);
-      await loadData();
-      setActiveTab("contracts");
-      setTimeout(() => setActionSuccessMsg(""), 7000);
+      if (created) {
+        setActionSuccessMsg(`✅ Proposal #${created.proposal_number || created.id} successfully created & Acknowledgement Email dispatched to ${propBuyerEmail || "Buyer"}!`);
+        setSelectedProposal(created);
+        setProposalModalOpen(true);
+        try {
+          await loadData();
+        } catch (loadErr) {
+          console.warn("Background loadData sync warning:", loadErr);
+        }
+        setTimeout(() => setActionSuccessMsg(""), 7000);
+      } else {
+        setActionSuccessMsg("⚠️ Failed to generate proposal. Please verify the form inputs and try again.");
+      }
+    } catch (err: any) {
+      console.error("handleCreateProposalSubmit error:", err);
+      setActionSuccessMsg(`⚠️ Error creating proposal: ${err?.message || "Please check connection"}`);
     }
   };
 
@@ -313,7 +323,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
             <span className="text-xs font-mono text-slate-500 dark:text-slate-400">TOTAL ESCROW LOCKED</span>
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
-              ₹{(summary.total_locked_inr / 100000).toFixed(2)} Lakh
+              ₹{((Number(summary.total_locked_inr) || 0) / 100000).toFixed(2)} Lakh
             </div>
             <p className="text-[11px] text-emerald-600 dark:text-emerald-400">100% Nodal Secured</p>
           </div>
@@ -321,7 +331,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
             <span className="text-xs font-mono text-slate-500 dark:text-slate-400">RELEASED TO SUPPLIERS</span>
             <div className="text-xl sm:text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-              ₹{(summary.total_released_inr / 100000).toFixed(2)} Lakh
+              ₹{((Number(summary.total_released_inr) || 0) / 100000).toFixed(2)} Lakh
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">Post-QC Handover</p>
           </div>
@@ -337,7 +347,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           <div className="p-5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 space-y-1 shadow-sm">
             <span className="text-xs font-mono text-slate-500 dark:text-slate-400">PLATFORM FEE ACCRUED</span>
             <div className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-mono">
-              ₹{summary.platform_fee_inr.toLocaleString("en-IN")}
+              ₹{Number(summary.platform_fee_inr || 0).toLocaleString("en-IN")}
             </div>
             <p className="text-[11px] text-slate-500 dark:text-slate-400">0.75% Trans Fee</p>
           </div>
@@ -453,99 +463,108 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
       </div>
 
       {/* Main Tab Views */}
-      {activeTab === "contracts" && selectedContract && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          
-          {/* Left Column: Contracts Sidebar List */}
-          <div className="lg:col-span-4 space-y-4">
-            <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono">
-              Active Escrow Contracts ({contracts.length})
-            </h3>
-
-            <div className="space-y-3">
-              {contracts.map((c) => (
-                <div
-                  key={c.id}
-                  onClick={() => setSelectedContract(c)}
-                  className={"p-5 rounded-2xl border transition-all cursor-pointer space-y-2 " + (
-                    selectedContract.id === c.id
-                      ? "bg-blue-50 dark:bg-slate-900 border-blue-500 shadow-md ring-1 ring-blue-500/20"
-                      : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700"
-                  )}
-                >
-                  <div className="flex items-center justify-between text-xs font-mono">
-                    <span className="text-blue-600 dark:text-blue-400 font-bold">{c.contract_number}</span>
-                    <span className="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 font-bold text-[10px]">
-                      {c.status}
-                    </span>
-                  </div>
-
-                  <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">{c.title}</h4>
-
-                  <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-                    <span className="text-slate-500 dark:text-slate-400 font-mono">Amount:</span>
-                    <span className="font-bold text-slate-900 dark:text-white font-mono">₹{c.total_amount.toLocaleString("en-IN")}</span>
-                  </div>
-                </div>
-              ))}
-            </div>
+      {activeTab === "contracts" && (
+        contracts.length === 0 ? (
+          <div className="p-12 text-center bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-3">
+            <FileText className="w-12 h-12 text-slate-400 mx-auto" />
+            <h3 className="text-lg font-bold text-slate-800 dark:text-slate-200">No Active Escrow Contracts</h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto">
+              Once a proposal is approved by the buyer, an escrow contract with automated delivery milestones will appear here.
+            </p>
           </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            {/* Left Column: Contracts Sidebar List */}
+            <div className="lg:col-span-4 space-y-4">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider font-mono">
+                Active Escrow Contracts ({contracts.length})
+              </h3>
 
-          {/* Right Column: Selected Contract Milestones & Actions */}
-          <div className="lg:col-span-8 space-y-6">
-            <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-xl space-y-6">
-              
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
-                <div>
-                  <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-bold">{selectedContract.contract_number}</span>
-                  <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
-                    {selectedContract.title}
-                  </h2>
-                  <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
-                    Escrow Virtual Account: <code className="text-slate-900 dark:text-white font-bold">{selectedContract.escrow_virtual_account}</code> (ICICI Bank)
-                  </p>
-                </div>
+              <div className="space-y-3">
+                {contracts.map((c) => (
+                  <div
+                    key={c.id}
+                    onClick={() => setSelectedContract(c)}
+                    className={"p-5 rounded-2xl border transition-all cursor-pointer space-y-2 " + (
+                      selectedContract?.id === c.id
+                        ? "bg-blue-50 dark:bg-slate-900 border-blue-500 shadow-md ring-1 ring-blue-500/20"
+                        : "bg-white dark:bg-slate-950 border-slate-200 dark:border-slate-800/80 hover:border-slate-300 dark:hover:border-slate-700"
+                    )}
+                  >
+                    <div className="flex items-center justify-between text-xs font-mono">
+                      <span className="text-blue-600 dark:text-blue-400 font-bold">{c.contract_number}</span>
+                      <span className="px-2 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-400 font-bold text-[10px]">
+                        {c.status}
+                      </span>
+                    </div>
 
-                <div className="text-right">
-                  <span className="text-xs font-mono text-slate-500 dark:text-slate-400">Total Escrow Value</span>
-                  <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                    ₹{selectedContract.total_amount.toLocaleString("en-IN")}
-                  </p>
-                </div>
+                    <h4 className="font-bold text-slate-900 dark:text-white text-sm line-clamp-1">{c.title}</h4>
+
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-100 dark:border-slate-800/80 text-xs">
+                      <span className="text-slate-500 dark:text-slate-400 font-mono">Amount:</span>
+                      <span className="font-bold text-slate-900 dark:text-white font-mono">₹{Number(c.total_amount || 0).toLocaleString("en-IN")}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
+            </div>
 
-              {/* Milestone Timeline Steps */}
-              <div className="space-y-4">
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider">
-                  Payment & Delivery Milestones ({selectedContract.milestones.length})
-                </h3>
+            {/* Right Column: Selected Contract Milestones & Actions */}
+            <div className="lg:col-span-8 space-y-6">
+              {selectedContract && (
+                <div className="p-6 sm:p-8 rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-sm dark:shadow-xl space-y-6">
+                  
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-slate-100 dark:border-slate-800">
+                    <div>
+                      <span className="text-xs font-mono text-blue-600 dark:text-blue-400 font-bold">{selectedContract.contract_number}</span>
+                      <h2 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white mt-1">
+                        {selectedContract.title}
+                      </h2>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                        Escrow Virtual Account: <code className="text-slate-900 dark:text-white font-bold">{selectedContract.escrow_virtual_account}</code> (ICICI Bank)
+                      </p>
+                    </div>
 
-                <div className="space-y-4">
-                  {selectedContract.milestones.map((m) => (
-                    <div
-                      key={m.id}
-                      className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 space-y-4 shadow-sm"
-                    >
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                        <div className="flex items-center gap-3">
-                          <span className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold text-xs font-mono">
-                            #{m.sequence}
-                          </span>
-                          <div>
-                            <h4 className="font-bold text-slate-900 dark:text-white text-sm">{m.title}</h4>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">{m.description}</p>
+                    <div className="text-right">
+                      <span className="text-xs font-mono text-slate-500 dark:text-slate-400">Total Escrow Value</span>
+                      <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                        ₹{Number(selectedContract.total_amount || 0).toLocaleString("en-IN")}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Milestone Timeline Steps */}
+                  <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase font-mono tracking-wider">
+                      Payment & Delivery Milestones ({(selectedContract.milestones || []).length})
+                    </h3>
+
+                    <div className="space-y-4">
+                      {(selectedContract.milestones || []).map((m) => (
+                        <div
+                          key={m.id}
+                          className="p-5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800/80 space-y-4 shadow-sm"
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-3">
+                              <span className="w-8 h-8 rounded-xl bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 flex items-center justify-center font-bold text-xs font-mono">
+                                #{m.sequence}
+                              </span>
+                              <div>
+                                <h4 className="font-bold text-slate-900 dark:text-white text-sm">{m.title}</h4>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">{m.description}</p>
+                              </div>
+                            </div>
+
+                            <div className="text-right">
+                              <span className="text-base font-black text-slate-900 dark:text-white font-mono">
+                                ₹{Number(m.amount || 0).toLocaleString("en-IN")}
+                              </span>
+                              <span className="block text-[10px] font-bold uppercase tracking-wider font-mono text-emerald-600 dark:text-emerald-400">
+                                {m.status}
+                              </span>
+                            </div>
                           </div>
-                        </div>
-
-                        <div className="text-right">
-                          <span className="text-base font-black text-slate-900 dark:text-white font-mono">
-                            ₹{m.amount.toLocaleString("en-IN")}
-                          </span>
-                          <span className="block text-[10px] font-bold uppercase tracking-wider font-mono text-emerald-600 dark:text-emerald-400">
-                            {m.status}
-                          </span>
-                        </div>
-                      </div>
 
                       {/* Milestone Proof / Notes if available */}
                       {m.deliverable_proof_url && (
@@ -618,10 +637,11 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
               </div>
 
             </div>
+          )}
           </div>
 
         </div>
-      )}
+      ))}
 
       {/* ======================================================== */}
       {/* 1. BUYER INCOMING PROPOSALS TAB (Review & One-Click Approve) */}
@@ -645,12 +665,27 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {proposals.map((p) => {
-              const isApproved = p.buyer_approved || p.status === "APPROVED" || p.status === "Confirmed";
-              const baseAmt = p.base_amount || (p.amount > 0 ? p.amount / 1.18 : 250000);
-              const discAmt = p.discount_amount || 0;
-              const dealAmt = baseAmt - discAmt;
-              const taxAmt = p.tax_amount || (dealAmt * 0.18);
-              const totalPayable = p.total_payable_amount || p.amount;
+              const isApproved = Boolean(p.buyer_approved || p.status === "APPROVED" || p.status === "Confirmed");
+              const rawBase = p.base_amount || (Number(p.amount || 0) > 0 ? Number(p.amount) / 1.18 : 250000);
+              const baseAmt = Number(rawBase) || 250000;
+              const discPct = Number(p.discount_percent) || 0;
+              const discAmt = Number(p.discount_amount) || (baseAmt * (discPct / 100));
+              const dealAmt = Math.max(0, baseAmt - discAmt);
+              const taxPct = Number(p.tax_percent) || 18;
+              const taxAmt = Number(p.tax_amount) || (dealAmt * (taxPct / 100));
+              const totalPayable = Number(p.total_payable_amount || (dealAmt + taxAmt) || p.amount || 0);
+
+              let formattedIssueDate = "Recent";
+              if (p.created_at) {
+                try {
+                  const d = new Date(p.created_at);
+                  if (!isNaN(d.getTime())) {
+                    formattedIssueDate = d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+                  }
+                } catch {
+                  formattedIssueDate = "Recent";
+                }
+              }
 
               return (
                 <div
@@ -668,7 +703,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
                         PROPOSAL #{p.proposal_number || p.id}
                       </span>
                       <p className="text-[11px] text-slate-400">
-                        Issued: {p.created_at ? new Date(p.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "Recent"}
+                        Issued: {formattedIssueDate}
                       </p>
                     </div>
 
@@ -712,22 +747,22 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
                   <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-1 text-xs">
                     <div className="flex justify-between text-slate-500 dark:text-slate-400">
                       <span>Base Quotation Price:</span>
-                      <span className="font-mono">₹{baseAmt.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                      <span className="font-mono">₹{Number(baseAmt || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
                     </div>
-                    {p.discount_percent && p.discount_percent > 0 ? (
+                    {discPct > 0 ? (
                       <div className="flex justify-between text-red-500">
-                        <span>Discount ({p.discount_percent}%):</span>
-                        <span className="font-mono">(-)₹{discAmt.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                        <span>Discount ({discPct}%):</span>
+                        <span className="font-mono">(-)₹{Number(discAmt || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
                       </div>
                     ) : null}
                     <div className="flex justify-between text-slate-500 dark:text-slate-400">
-                      <span>GST (18% IGST):</span>
-                      <span className="font-mono">+₹{taxAmt.toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
+                      <span>GST ({taxPct}% IGST):</span>
+                      <span className="font-mono">+₹{Number(taxAmt || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}</span>
                     </div>
                     <div className="flex justify-between text-sm font-black text-slate-900 dark:text-white pt-1 border-t border-dashed border-slate-200 dark:border-slate-800">
                       <span>Total Payable Amount:</span>
                       <span className="font-mono text-emerald-600 dark:text-emerald-400">
-                        ₹{totalPayable.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                        ₹{Number(totalPayable || 0).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
                       </span>
                     </div>
                   </div>
@@ -895,11 +930,11 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
               <div className="space-y-0.5">
                 <span className="font-bold text-emerald-900 dark:text-emerald-300">Payable Total with 18% GST:</span>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Base: ₹{propBaseAmount.toLocaleString("en-IN")} • Discount: {propDiscountPct}% • GST @ 18%
+                  Base: ₹{Number(propBaseAmount || 0).toLocaleString("en-IN")} • Discount: {propDiscountPct || 0}% • GST @ 18%
                 </p>
               </div>
               <div className="text-xl font-black font-mono text-emerald-600 dark:text-emerald-400">
-                ₹{((propBaseAmount * (1 - propDiscountPct / 100)) * 1.18).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                ₹{(((Number(propBaseAmount) || 0) * (1 - (Number(propDiscountPct) || 0) / 100)) * 1.18).toLocaleString("en-IN", { maximumFractionDigits: 0 })}
               </div>
             </div>
 

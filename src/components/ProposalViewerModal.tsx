@@ -11,6 +11,30 @@ interface ProposalViewerModalProps {
   isBuyer?: boolean;
 }
 
+const safeNum = (val: any, fallback = 0): number => {
+  const n = Number(val);
+  return isNaN(n) || !isFinite(n) ? fallback : n;
+};
+
+const safeFormatINR = (val: any, decimals = 2): string => {
+  const n = safeNum(val);
+  return n.toLocaleString("en-IN", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
+  });
+};
+
+const safeFormatDate = (val: any, fallback = "N/A"): string => {
+  if (!val) return fallback;
+  try {
+    const d = new Date(val);
+    if (isNaN(d.getTime())) return fallback;
+    return d.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+  } catch {
+    return fallback;
+  }
+};
+
 export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
   proposal,
   isOpen,
@@ -22,18 +46,19 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
 
   if (!isOpen || !proposal) return null;
 
-  const baseAmt = proposal.base_amount || (proposal.amount > 0 ? proposal.amount / 1.18 : 250000);
-  const discPct = proposal.discount_percent || 0;
-  const discAmt = proposal.discount_amount || (baseAmt * (discPct / 100));
-  const dealAmt = baseAmt - discAmt;
-  const taxPct = proposal.tax_percent || 18;
-  const taxAmt = proposal.tax_amount || (dealAmt * (taxPct / 100));
-  const totalPayable = proposal.total_payable_amount || (dealAmt + taxAmt) || proposal.amount;
+  const rawBase = proposal.base_amount || (Number(proposal.amount || 0) > 0 ? Number(proposal.amount) / 1.18 : 250000);
+  const baseAmt = safeNum(rawBase, 250000);
+  const discPct = safeNum(proposal.discount_percent, 0);
+  const discAmt = safeNum(proposal.discount_amount, baseAmt * (discPct / 100));
+  const dealAmt = Math.max(0, baseAmt - discAmt);
+  const taxPct = safeNum(proposal.tax_percent, 18);
+  const taxAmt = safeNum(proposal.tax_amount, dealAmt * (taxPct / 100));
+  const totalPayable = safeNum(proposal.total_payable_amount || (dealAmt + taxAmt) || proposal.amount, dealAmt + taxAmt);
 
-  const isApproved = proposal.buyer_approved || proposal.status === "APPROVED" || proposal.status === "Confirmed";
-  const propDate = proposal.created_at ? new Date(proposal.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "18-Sep-2026";
-  const validDate = proposal.valid_till_date ? new Date(proposal.valid_till_date).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "14 Days from Issue";
-  const approvedDate = proposal.approved_at ? new Date(proposal.approved_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : isApproved ? propDate : "Pending Acceptance";
+  const isApproved = Boolean(proposal.buyer_approved || proposal.status === "APPROVED" || proposal.status === "Confirmed");
+  const propDate = safeFormatDate(proposal.created_at, "18-Sep-2026");
+  const validDate = safeFormatDate(proposal.valid_till_date, "14 Days from Issue");
+  const approvedDate = proposal.approved_at ? safeFormatDate(proposal.approved_at) : isApproved ? propDate : "Pending Acceptance";
 
   const handlePrint = () => {
     if (printAreaRef.current) {
@@ -225,7 +250,7 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
                     </div>
                   </td>
                   <td className="py-4 px-4 text-right font-black font-mono text-sm align-top text-slate-900">
-                    ₹{baseAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    ₹{safeFormatINR(baseAmt)}
                   </td>
                 </tr>
               </tbody>
@@ -271,29 +296,29 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
             <div className="w-full sm:w-80 rounded-xl border border-slate-300 overflow-hidden text-xs">
               <div className="flex justify-between py-2 px-3 border-b border-slate-200">
                 <span className="text-slate-600">Total Price</span>
-                <span className="font-mono font-bold text-slate-800">₹{baseAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-mono font-bold text-slate-800">₹{safeFormatINR(baseAmt)}</span>
               </div>
 
               {discPct > 0 && (
                 <div className="flex justify-between py-2 px-3 border-b border-slate-200 text-red-600">
                   <span>Discount @ {discPct}%</span>
-                  <span className="font-mono font-bold">(-)₹{discAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                  <span className="font-mono font-bold">(-)₹{safeFormatINR(discAmt)}</span>
                 </div>
               )}
 
               <div className="flex justify-between py-2 px-3 border-b border-slate-200 font-bold bg-slate-50">
                 <span className="text-slate-800">Deal Amount</span>
-                <span className="font-mono text-slate-900">₹{dealAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-mono text-slate-900">₹{safeFormatINR(dealAmt)}</span>
               </div>
 
               <div className="flex justify-between py-2 px-3 border-b border-slate-200">
                 <span className="text-slate-600">IGST / GST @ {taxPct}%</span>
-                <span className="font-mono font-bold text-slate-800">₹{taxAmt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-mono font-bold text-slate-800">₹{safeFormatINR(taxAmt)}</span>
               </div>
 
               <div className="flex justify-between py-2.5 px-3 bg-slate-900 text-white font-bold text-sm">
                 <span>Total Payable Amount</span>
-                <span className="font-mono text-emerald-400">₹{totalPayable.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <span className="font-mono text-emerald-400">₹{safeFormatINR(totalPayable)}</span>
               </div>
             </div>
           </div>

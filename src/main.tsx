@@ -54,9 +54,32 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
             <h1 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 10px 0', color: '#fff' }}>
               PayShieldX Protected Session
             </h1>
-            <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 24px 0' }}>
+            <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.6, margin: '0 0 20px 0' }}>
               A temporary display exception occurred. Your escrow funds, contracts, and authentication states remain 100% secure.
             </p>
+
+            {this.state.error && (
+              <div style={{
+                marginBottom: '20px',
+                padding: '12px 14px',
+                background: '#1e293b',
+                border: '1px solid #334155',
+                borderRadius: '12px',
+                color: '#f87171',
+                fontSize: '11px',
+                fontFamily: 'monospace',
+                textAlign: 'left',
+                maxHeight: '140px',
+                overflowY: 'auto',
+                wordBreak: 'break-all'
+              }}>
+                <strong>Exception details:</strong>
+                <pre style={{ margin: '6px 0 0 0', whiteSpace: 'pre-wrap' }}>
+                  {this.state.error.message || String(this.state.error)}
+                </pre>
+              </div>
+            )}
+
             <button
               onClick={() => {
                 window.location.reload();
