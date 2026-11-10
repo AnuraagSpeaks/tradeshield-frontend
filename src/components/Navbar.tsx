@@ -38,16 +38,16 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
 
   return (
     <header className="sticky top-0 z-50 backdrop-blur-xl bg-white/90 dark:bg-slate-950/85 border-b border-slate-200/80 dark:border-slate-800/80 transition-colors duration-300 shadow-sm dark:shadow-none">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
         
         {/* Brand Logo & Contextual Workspace Indicator */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <div 
             className="flex items-center gap-2 cursor-pointer group transition-transform active:scale-95"
             onClick={() => onNavigate("landing", "#home", "/")}
             title="PayShieldX Homepage"
           >
-            <img src="/logo.svg" alt="PayShieldX Logo" className="h-9 w-auto" />
+            <img src="/logo.svg" alt="PayShieldX Logo" className="h-7 sm:h-9 w-auto" />
           </div>
 
           {/* In Dashboard: Display Sleek Application Context Badge */}
@@ -92,22 +92,22 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
         )}
 
         {/* Right Action Bar */}
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* Theme Toggle Button */}
           <ThemeToggle />
 
           {isAuthenticated && user ? (
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Authenticated User Status Pill (Direct Dashboard Trigger) */}
               <button
                 type="button"
                 onClick={handleGoToDashboard}
-                className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-900 dark:hover:bg-slate-800/90 border border-slate-200 dark:border-slate-800 text-xs transition-all cursor-pointer group shadow-2xs hover:border-blue-400 dark:hover:border-emerald-500/50"
+                className="flex items-center gap-1.5 sm:gap-2.5 px-2 sm:px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200/80 dark:bg-slate-900 dark:hover:bg-slate-800/90 border border-slate-200 dark:border-slate-800 text-xs transition-all cursor-pointer group shadow-2xs hover:border-blue-400 dark:hover:border-emerald-500/50"
                 title={currentView === "landing" ? "Click to open your dashboard" : "Active verified session"}
               >
                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></div>
                 <div className="text-left">
-                  <div className="font-extrabold text-slate-900 dark:text-white truncate max-w-[120px] sm:max-w-[170px]">
+                  <div className="font-extrabold text-slate-900 dark:text-white truncate max-w-[75px] xs:max-w-[110px] sm:max-w-[170px]">
                     {user.role === "admin" ? "PayShield Admin" : user.business_name}
                   </div>
                   <div className="text-[10px] text-slate-500 dark:text-slate-400 font-mono">
@@ -120,15 +120,15 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
                 )}
               </button>
 
-              {/* Sign Out Button */}
+              {/* Sign Out Button (Always prominent and accessible on phone) */}
               <button
                 type="button"
                 onClick={handleLogout}
                 title="Sign Out of Session"
-                className="p-2 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-500 hover:text-rose-600 dark:bg-slate-900 dark:hover:bg-rose-950/40 dark:text-slate-400 dark:hover:text-rose-400 border border-slate-200 dark:border-slate-800 transition-colors flex items-center gap-1.5 text-xs font-semibold cursor-pointer"
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60 transition-colors text-xs font-bold cursor-pointer shrink-0 shadow-xs"
               >
                 <LogOut className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Sign Out</span>
+                <span className="text-[11px] sm:text-xs">Sign Out</span>
               </button>
             </div>
           ) : (

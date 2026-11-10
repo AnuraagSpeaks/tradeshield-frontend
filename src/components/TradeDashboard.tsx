@@ -56,10 +56,20 @@ import { openOfficialGSTPortal } from "../utils/gstHelper";
 
 interface TradeDashboardProps {
   onOpenAuth?: (role: "buyer" | "supplier", mode: "login" | "register") => void;
+  onNavigate?: (view: "landing" | "dashboard", hash?: string, path?: string) => void;
 }
 
-export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) => {
+export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNavigate }) => {
   const { user, logout } = useAuth();
+  
+  const handleLogout = () => {
+    logout();
+    if (onNavigate) {
+      onNavigate("landing", "#home", "/");
+    } else {
+      window.location.href = "/";
+    }
+  };
   
   // Strict Role-Based Access: Role is strictly derived from verified authentication credentials
   const isAdmin = user?.role === "admin";
@@ -270,10 +280,10 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   };
 
   return (
-    <div className="py-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8 transition-colors duration-300">
+    <div className="py-6 sm:py-10 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 transition-colors duration-300">
       
       {/* Top Role Switcher Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-6 sm:p-8 shadow-sm dark:shadow-xl">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-4 sm:p-8 shadow-sm dark:shadow-xl">
         <div className="space-y-2">
           <div className="flex flex-wrap items-center gap-3">
             <span className="px-3 py-1 rounded-full text-xs font-bold font-mono bg-emerald-100 text-emerald-800 dark:bg-emerald-500/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 flex items-center gap-1.5">
@@ -302,9 +312,9 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         </div>
 
         {/* Authenticated Workspace & Access Control Card */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 bg-slate-100 dark:bg-slate-950 p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-3 bg-slate-100 dark:bg-slate-950 p-2 sm:p-3 rounded-2xl border border-slate-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <span className={"px-3.5 py-2 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 shadow-sm " + (
+            <span className={"px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold font-mono flex items-center gap-1.5 shadow-sm " + (
               role === "ADMIN"
                 ? "bg-purple-600 text-white dark:bg-purple-500 dark:text-slate-950"
                 : role === "BUYER"
@@ -324,10 +334,21 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
                 logout();
               }
             }}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-800 transition-all cursor-pointer shadow-sm hover:border-slate-300 dark:hover:border-slate-700"
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-white dark:bg-slate-900 hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold border border-slate-200 dark:border-slate-800 transition-all cursor-pointer shadow-sm hover:border-slate-300 dark:hover:border-slate-700"
             title="Authenticate as a different organization or persona"
           >
             <ArrowLeftRight className="w-3.5 h-3.5 text-blue-600 dark:text-emerald-400" />
+            <span className="hidden sm:inline">Switch</span>
+          </button>
+
+          {/* Prominent Sign Out Button */}
+          <button
+            onClick={handleLogout}
+            className="flex items-center gap-1.5 px-3 py-1.5 sm:py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-600 dark:bg-rose-950/40 dark:hover:bg-rose-900/60 dark:text-rose-400 border border-rose-200 dark:border-rose-800/60 transition-all text-xs font-bold cursor-pointer shadow-sm shrink-0"
+            title="Sign out of current account"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span>Sign Out</span>
           </button>
         </div>
       </div>
@@ -392,13 +413,13 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         {role === "BUYER" && (
           <button
             onClick={() => setActiveTab("proposals")}
-            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+            className={"px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap " + (
               activeTab === "proposals"
                 ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                 : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
             )}
           >
-            <Inbox className="w-4 h-4" />
+            <Inbox className="w-4 h-4 shrink-0" />
             <span>Incoming Deals & Proposals</span>
             {proposals.filter(p => !p.buyer_approved && p.status !== "APPROVED").length > 0 && (
               <span className="px-1.5 py-0.5 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black">
@@ -411,13 +432,13 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         {/* Both: Active Contracts Tab */}
         <button
           onClick={() => setActiveTab("contracts")}
-          className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+          className={"px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap " + (
             activeTab === "contracts"
               ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
               : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
           )}
         >
-          <FileText className="w-4 h-4" />
+          <FileText className="w-4 h-4 shrink-0" />
           <span>Active Contracts & Milestones</span>
           <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300">
             {contracts.length}
@@ -428,13 +449,13 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         {role === "SUPPLIER" && (
           <button
             onClick={() => setActiveTab("new_deal")}
-            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+            className={"px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap " + (
               activeTab === "new_deal"
                 ? "bg-emerald-600 text-white shadow-md shadow-emerald-600/20"
                 : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
             )}
           >
-            <PlusCircle className="w-4 h-4 text-emerald-400" />
+            <PlusCircle className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>+ Create Trade Proposal</span>
           </button>
         )}
@@ -442,26 +463,26 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         {/* Both: Disputes */}
         <button
           onClick={() => setActiveTab("disputes")}
-          className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+          className={"px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap " + (
             activeTab === "disputes"
               ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
               : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
           )}
         >
-          <Gavel className="w-4 h-4" />
+          <Gavel className="w-4 h-4 shrink-0" />
           <span>Dispute Resolution Hub</span>
         </button>
 
         {/* Both: GSTIN & Bank Verifier */}
         <button
           onClick={() => setActiveTab("kyc")}
-          className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+          className={"px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap " + (
             activeTab === "kyc"
               ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
               : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
           )}
         >
-          <CheckCircle2 className="w-4 h-4" />
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
           <span>GSTIN & Bank Verifier</span>
         </button>
 
@@ -469,13 +490,13 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
         {role === "BUYER" && (
           <button
             onClick={() => setActiveTab("supplier_search")}
-            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+            className={"px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shrink-0 whitespace-nowrap " + (
               activeTab === "supplier_search"
                 ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
                 : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
             )}
           >
-            <Search className="w-4 h-4" />
+            <Search className="w-4 h-4 shrink-0" />
             <span>Supplier Search</span>
           </button>
         )}

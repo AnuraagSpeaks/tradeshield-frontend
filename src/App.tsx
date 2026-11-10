@@ -174,6 +174,7 @@ const AppContent: React.FC = () => {
               setAuthMode(mode);
               setAuthModalOpen(true);
             }}
+            onNavigate={navigateTo}
           />
         )}
       </main>
