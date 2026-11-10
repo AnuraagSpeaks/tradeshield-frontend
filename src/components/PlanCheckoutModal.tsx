@@ -293,7 +293,11 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
       );
 
       const razorpayKey =
-        (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || "rzp_live_TySmqq7P6ZyM46";
+        (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || "";
+
+      if (!razorpayKey) {
+        throw new Error("Payment Gateway is temporarily unavailable: VITE_RAZORPAY_KEY_ID not configured.");
+      }
 
       // 3. Configure Razorpay Standard Checkout options
       const options = {
