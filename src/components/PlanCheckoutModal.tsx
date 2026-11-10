@@ -293,7 +293,7 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
       );
 
       const razorpayKey =
-        (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || "rzp_test_Tsa2ayJfSJsAw3";
+        (import.meta as any).env?.VITE_RAZORPAY_KEY_ID || "rzp_live_TySmqq7P6ZyM46";
 
       // 3. Configure Razorpay Standard Checkout options
       const options = {
