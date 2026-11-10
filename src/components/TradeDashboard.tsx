@@ -43,13 +43,15 @@ import {
   Printer,
   Sparkles,
   ExternalLink,
-  Copy
+  Copy,
+  Search
 } from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { DocumentViewerModal } from "./DocumentViewerModal";
 import { ProposalViewerModal } from "./ProposalViewerModal";
 import { AdminExecutiveDashboard } from "./AdminExecutiveDashboard";
+import { SupplierSearchDirectory } from "./SupplierSearchDirectory";
 import { openOfficialGSTPortal } from "../utils/gstHelper";
 
 interface TradeDashboardProps {
@@ -73,7 +75,7 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
   const [actionSuccessMsg, setActionSuccessMsg] = useState<string>("");
 
   // Active Tab & Navigation
-  const [activeTab, setActiveTab] = useState<"proposals" | "contracts" | "new_deal" | "disputes" | "kyc" | "ledger">(
+  const [activeTab, setActiveTab] = useState<"proposals" | "contracts" | "new_deal" | "disputes" | "kyc" | "ledger" | "supplier_search">(
     isAdmin ? "disputes" : !isSupplier ? "proposals" : "contracts"
   );
   const [loading, setLoading] = useState<boolean>(true);
@@ -433,6 +435,21 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
           <CheckCircle2 className="w-4 h-4" />
           <span>GSTIN & Bank Verifier</span>
         </button>
+
+        {/* Buyer Only: Supplier Search Tab (Beside GSTIN & Bank Verifier) */}
+        {role === "BUYER" && (
+          <button
+            onClick={() => setActiveTab("supplier_search")}
+            className={"px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer " + (
+              activeTab === "supplier_search"
+                ? "bg-blue-600 text-white shadow-md shadow-blue-600/20"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white border border-slate-200 dark:border-slate-800"
+            )}
+          >
+            <Search className="w-4 h-4" />
+            <span>Supplier Search</span>
+          </button>
+        )}
       </div>
 
       {/* Main Tab Views */}
@@ -1154,6 +1171,11 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Buyer Only: Supplier Search Directory View */}
+      {activeTab === "supplier_search" && role === "BUYER" && (
+        <SupplierSearchDirectory />
       )}
 
       {/* Proof Submission Modal */}
