@@ -64,6 +64,8 @@ const AppContent: React.FC = () => {
     const handleUrlRouting = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
+      const searchParams = new URLSearchParams(window.location.search);
+      const isProposalQuery = searchParams.get("tab") === "proposals" || Boolean(searchParams.get("proposalId"));
 
       if (
         path.startsWith("/admin") || 
@@ -80,7 +82,7 @@ const AppContent: React.FC = () => {
           return;
         }
         setCurrentView("dashboard");
-      } else if (path.startsWith("/dashboard") || path.startsWith("/portal")) {
+      } else if (path.startsWith("/dashboard") || path.startsWith("/portal") || isProposalQuery) {
         setCurrentView("dashboard");
       } else {
         setCurrentView("landing");

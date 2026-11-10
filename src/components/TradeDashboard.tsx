@@ -141,6 +141,25 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth }) =>
     if (cData.length > 0) {
       setSelectedContract(cData[0]);
     }
+
+    // Auto-open proposal if proposalId or tab=proposals is present in query parameters
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const targetPropId = params.get("proposalId");
+      if (targetPropId && pData && pData.length > 0) {
+        const found = pData.find((p: Proposal) => p.id === targetPropId || p.proposal_number === targetPropId);
+        if (found) {
+          setSelectedProposal(found);
+          setProposalModalOpen(true);
+          setActiveTab("proposals");
+        }
+      } else if (params.get("tab") === "proposals") {
+        setActiveTab("proposals");
+      }
+    } catch (e) {
+      console.warn("URL proposal sync warning:", e);
+    }
+
     setLoading(false);
   };
 
