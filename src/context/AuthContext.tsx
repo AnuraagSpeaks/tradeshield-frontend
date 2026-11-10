@@ -194,6 +194,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = () => {
     setUser(null);
     localStorage.removeItem(STORAGE_KEY);
+    sessionStorage.clear();
   };
 
   const updateUser = (data: Partial<User>) => {

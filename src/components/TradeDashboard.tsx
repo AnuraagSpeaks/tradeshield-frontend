@@ -64,10 +64,12 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNa
   
   const handleLogout = () => {
     logout();
+    sessionStorage.removeItem("payshield_pending_redirect");
+    window.history.replaceState({}, "", "/");
     if (onNavigate) {
       onNavigate("landing", "#home", "/");
     } else {
-      window.location.href = "/";
+      window.location.replace("/");
     }
   };
   
@@ -174,8 +176,10 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNa
   };
 
   useEffect(() => {
-    loadData();
-  }, []);
+    if (user) {
+      loadData();
+    }
+  }, [user]);
 
   const handleApproveMilestone = async (mId: string) => {
     await approveMilestone(mId);
@@ -278,6 +282,43 @@ export const TradeDashboard: React.FC<TradeDashboardProps> = ({ onOpenAuth, onNa
     const res = await verifyGSTIN(kycGstInput);
     setKycResult(res);
   };
+
+  if (!user) {
+    return (
+      <div className="min-h-[65vh] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-3xl p-8 text-center space-y-6 shadow-xl">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-amber-100 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <Lock className="w-8 h-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-bold text-slate-900 dark:text-white">Authentication Required</h2>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+              You are currently signed out. Please sign in with your verified credentials or Pass ID to access the PayShieldX Escrow Workspace.
+            </p>
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={() => {
+                if (onNavigate) onNavigate("landing", "#home", "/");
+                else window.location.href = "/";
+              }}
+              className="flex-1 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-bold hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer transition-all"
+            >
+              Go to Homepage
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenAuth && onOpenAuth("buyer", "login")}
+              className="flex-1 py-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-md shadow-blue-600/20 cursor-pointer transition-all"
+            >
+              Sign In
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="py-6 sm:py-10 max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 space-y-6 sm:space-y-8 transition-colors duration-300">

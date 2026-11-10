@@ -45,7 +45,16 @@ const AppContent: React.FC = () => {
         window.scrollTo({ top: 0, behavior: "smooth" });
       }
     } else {
-      if ((path === "/admin" || path === "/court" || path === "/arbiter") && (!user || user.role !== "admin")) {
+      // Protected Route Guard: Require authentication for dashboard
+      if (!user) {
+        setCurrentView("landing");
+        window.history.replaceState({}, "", "/");
+        setAuthRole("buyer");
+        setAuthMode("login");
+        setAuthModalOpen(true);
+        return;
+      }
+      if ((path === "/admin" || path === "/court" || path === "/arbiter") && user.role !== "admin") {
         setCurrentView("landing");
         setAuthRole("admin");
         setAuthMode("login");
@@ -59,7 +68,7 @@ const AppContent: React.FC = () => {
     }
   };
 
-  // Direct /admin, /dashboard, and URL popstate routing
+  // Direct /admin, /dashboard, and URL popstate routing with Strict Auth Protection
   React.useEffect(() => {
     const handleUrlRouting = () => {
       const path = window.location.pathname.toLowerCase();
@@ -83,6 +92,19 @@ const AppContent: React.FC = () => {
         }
         setCurrentView("dashboard");
       } else if (path.startsWith("/dashboard") || path.startsWith("/portal") || isProposalQuery) {
+        if (!user) {
+          // If unauthenticated user arrives via proposal link (e.g. from email) or dashboard URL
+          setCurrentView("landing");
+          if (isProposalQuery) {
+            // Save proposal target URL so after signing in, user is directly routed back to the proposal
+            sessionStorage.setItem("payshield_pending_redirect", window.location.pathname + window.location.search);
+          }
+          window.history.replaceState({}, "", "/");
+          setAuthRole("buyer");
+          setAuthMode("login");
+          setAuthModalOpen(true);
+          return;
+        }
         setCurrentView("dashboard");
       } else {
         setCurrentView("landing");
@@ -135,7 +157,14 @@ const AppContent: React.FC = () => {
   };
 
   const handleAuthSuccess = () => {
-    navigateTo("dashboard");
+    const pendingRedirect = sessionStorage.getItem("payshield_pending_redirect");
+    if (pendingRedirect) {
+      sessionStorage.removeItem("payshield_pending_redirect");
+      window.history.replaceState({}, "", pendingRedirect);
+      setCurrentView("dashboard");
+    } else {
+      navigateTo("dashboard");
+    }
   };
 
   return (

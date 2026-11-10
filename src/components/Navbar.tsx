@@ -29,6 +29,8 @@ export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenR
 
   const handleLogout = () => {
     logout();
+    sessionStorage.removeItem("payshield_pending_redirect");
+    window.history.replaceState({}, "", "/");
     onNavigate("landing", "#home", "/");
   };
 
