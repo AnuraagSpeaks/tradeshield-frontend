@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { Proposal } from "../types";
 import { X, Printer, ShieldCheck, CheckCircle2, Building2 } from "lucide-react";
 import { printElement } from "../utils/printHelper";
@@ -43,12 +43,29 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
     }
   };
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        onClose();
+      }
+    };
+    if (isOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <div className="relative w-full max-w-4xl bg-white text-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-8">
+    <div 
+      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/85 backdrop-blur-md p-2 sm:p-6 flex justify-center items-start animate-in fade-in duration-150"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
+    >
+      <div className="relative w-full max-w-4xl bg-white text-slate-900 rounded-3xl shadow-2xl overflow-hidden border border-slate-200 my-4 sm:my-8">
         
-        {/* Modal Action Header (Excluded during print) */}
-        <div className="no-print flex items-center justify-between px-6 py-4 bg-slate-900 text-white border-b border-slate-800">
+        {/* Sticky Modal Action Header (Always anchored at top of modal) */}
+        <div className="sticky top-0 z-30 no-print flex items-center justify-between px-4 sm:px-6 py-3.5 bg-slate-900 text-white border-b border-slate-800 shadow-lg">
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs font-bold text-blue-400">PROPOSAL #{proposal.proposal_number || proposal.id}</span>
             <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
@@ -58,13 +75,13 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <button
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-all border border-slate-700 cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
-              <span>Print / Save PDF</span>
+              <span className="hidden sm:inline">Print / Save PDF</span>
             </button>
 
             {isBuyer && !isApproved && onApprove && (
@@ -79,9 +96,11 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all cursor-pointer"
+              title="Close (Esc)"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-rose-600 text-slate-300 hover:text-white transition-all border border-slate-700 cursor-pointer text-xs font-bold shadow-sm"
             >
-              <X className="w-5 h-5" />
+              <X className="w-4 h-4" />
+              <span className="font-medium">Close</span>
             </button>
           </div>
         </div>
@@ -216,34 +235,34 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
           {/* Pricing & Tax Summary with Bank Transfer Details */}
           <div className="mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 pt-2">
             
-            {/* NEFT / RTGS / IMPS Bank Transfer Details Box */}
-            <div className="p-3.5 bg-slate-50 dark:bg-slate-900/70 rounded-2xl border border-slate-200 dark:border-slate-800 w-full sm:max-w-xs space-y-2">
-              <div className="flex items-center gap-2 pb-1.5 border-b border-slate-200 dark:border-slate-800">
-                <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span className="font-bold text-slate-900 dark:text-white text-xs tracking-wide">
-                  NEFT/RTGS/IMPS
+            {/* NEFT / RTGS / IMPS Bank Transfer Details Box (Clean, High-Contrast White Background) */}
+            <div className="bg-slate-50 rounded-2xl border-2 border-slate-300 p-4 w-full sm:max-w-sm space-y-2.5 text-slate-900 shadow-sm">
+              <div className="flex items-center gap-2 pb-2 border-b border-slate-200">
+                <Building2 className="w-4 h-4 text-blue-700 shrink-0" />
+                <span className="font-extrabold text-slate-900 text-xs tracking-wider uppercase font-mono">
+                  NEFT / RTGS / IMPS
                 </span>
               </div>
-              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
-                <span>PayShieldX Bank Details</span>
+              <div className="text-[11px] font-bold text-slate-800 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
+                <span>PayShieldX Nodal Account Details</span>
               </div>
-              <div className="space-y-1.5 text-xs pt-0.5">
+              <div className="space-y-2 text-xs pt-0.5">
                 <div className="flex justify-between items-baseline gap-2">
-                  <span className="text-slate-500 text-[11px]">Account Name :</span>
-                  <span className="font-bold text-slate-900 dark:text-white font-mono text-[11px] text-right">S S ENTERPRISE</span>
+                  <span className="text-slate-600 text-xs font-semibold">Account Name :</span>
+                  <span className="font-bold text-slate-950 font-mono text-xs">S S ENTERPRISE</span>
                 </div>
-                <div className="flex justify-between items-baseline gap-2">
-                  <span className="text-slate-500 text-[11px]">Account Number :</span>
-                  <span className="font-bold text-blue-600 dark:text-blue-400 font-mono text-xs tracking-wider text-right">8188376210</span>
+                <div className="flex justify-between items-baseline gap-2 bg-blue-100/70 px-3 py-2 rounded-xl border border-blue-300">
+                  <span className="text-blue-950 text-xs font-bold">Account Number :</span>
+                  <span className="font-mono font-black text-sm tracking-widest text-blue-950 select-all">8188376210</span>
                 </div>
-                <div className="flex justify-between items-baseline gap-2">
-                  <span className="text-slate-500 text-[11px]">IFSC :</span>
-                  <span className="font-bold text-slate-900 dark:text-white font-mono text-[11px] tracking-wider text-right">IDIB000M702</span>
+                <div className="flex justify-between items-baseline gap-2 bg-white px-3 py-1.5 rounded-xl border border-slate-300">
+                  <span className="text-slate-800 text-xs font-semibold">IFSC Code :</span>
+                  <span className="font-mono font-black text-xs tracking-wider text-slate-950 select-all">IDIB000M702</span>
                 </div>
-                <div className="flex justify-between items-baseline gap-2">
-                  <span className="text-slate-500 text-[11px]">Bank Name :</span>
-                  <span className="font-bold text-slate-900 dark:text-white text-[11px] text-right">Indian Bank</span>
+                <div className="flex justify-between items-baseline gap-2 pt-0.5">
+                  <span className="text-slate-600 text-xs font-semibold">Bank Name :</span>
+                  <span className="font-bold text-slate-950 text-xs">Indian Bank</span>
                 </div>
               </div>
             </div>
