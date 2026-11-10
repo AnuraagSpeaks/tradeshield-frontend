@@ -847,6 +847,7 @@ export interface CreateOrderResponse {
   order_id: string;
   amount: number;
   currency: string;
+  key_id?: string;
 }
 
 export async function createRazorpayOrder(amountInPaise: number, receipt?: string): Promise<CreateOrderResponse> {
