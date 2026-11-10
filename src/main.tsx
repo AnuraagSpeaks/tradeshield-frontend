@@ -106,6 +106,16 @@ class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   }
 }
 
+// Non-blocking background keep-alive ping to wake up Render backend early
+try {
+  const backendHealth = import.meta.env.VITE_API_BASE_URL 
+    ? `${import.meta.env.VITE_API_BASE_URL}/health` 
+    : "https://tradeshield-backend-q97r.onrender.com/api/v1/health";
+  fetch(backendHealth, { method: "GET" }).catch(() => {});
+} catch {
+  // Silent catch
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ErrorBoundary>
