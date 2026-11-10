@@ -1,6 +1,6 @@
 import React, { useRef } from "react";
 import { Proposal } from "../types";
-import { X, Printer, ShieldCheck, CheckCircle2 } from "lucide-react";
+import { X, Printer, ShieldCheck, CheckCircle2, Building2 } from "lucide-react";
 import { printElement } from "../utils/printHelper";
 
 interface ProposalViewerModalProps {
@@ -213,22 +213,38 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
             </table>
           </div>
 
-          {/* Pricing & Tax Summary with QR Code */}
+          {/* Pricing & Tax Summary with Bank Transfer Details */}
           <div className="mt-6 flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 pt-2">
             
-            {/* QR Code Verification Box */}
-            <div className="flex items-center gap-4 p-3 bg-slate-50 rounded-2xl border border-slate-200 max-w-xs">
-              <img
-                src={`https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=https://app.payshieldx.in/proposal/${proposal.proposal_number || proposal.id}`}
-                alt="QR Code"
-                className="w-20 h-20 rounded-lg bg-white p-1 border border-slate-300"
-              />
-              <div className="space-y-1">
-                <span className="text-[11px] font-bold text-slate-900 block">Scan To Verify / Pay</span>
-                <span className="text-[10px] text-slate-500 block leading-tight">
-                  Instant escrow verification & nodal account deposit link.
+            {/* NEFT / RTGS / IMPS Bank Transfer Details Box */}
+            <div className="p-3.5 bg-slate-50 dark:bg-slate-900/70 rounded-2xl border border-slate-200 dark:border-slate-800 w-full sm:max-w-xs space-y-2">
+              <div className="flex items-center gap-2 pb-1.5 border-b border-slate-200 dark:border-slate-800">
+                <Building2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                <span className="font-bold text-slate-900 dark:text-white text-xs tracking-wide">
+                  NEFT/RTGS/IMPS
                 </span>
-                <span className="text-[9px] font-mono text-blue-600 block">100% Nodal Escrow</span>
+              </div>
+              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                <span>PayShieldX Bank Details</span>
+              </div>
+              <div className="space-y-1.5 text-xs pt-0.5">
+                <div className="flex justify-between items-baseline gap-2">
+                  <span className="text-slate-500 text-[11px]">Account Name :</span>
+                  <span className="font-bold text-slate-900 dark:text-white font-mono text-[11px] text-right">S S ENTERPRISE</span>
+                </div>
+                <div className="flex justify-between items-baseline gap-2">
+                  <span className="text-slate-500 text-[11px]">Account Number :</span>
+                  <span className="font-bold text-blue-600 dark:text-blue-400 font-mono text-xs tracking-wider text-right">8188376210</span>
+                </div>
+                <div className="flex justify-between items-baseline gap-2">
+                  <span className="text-slate-500 text-[11px]">IFSC :</span>
+                  <span className="font-bold text-slate-900 dark:text-white font-mono text-[11px] tracking-wider text-right">IDIB000M702</span>
+                </div>
+                <div className="flex justify-between items-baseline gap-2">
+                  <span className="text-slate-500 text-[11px]">Bank Name :</span>
+                  <span className="font-bold text-slate-900 dark:text-white text-[11px] text-right">Indian Bank</span>
+                </div>
               </div>
             </div>
 
@@ -266,7 +282,7 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
           {/* Legal Terms & Escrow Clause Footer */}
           <div className="mt-8 pt-4 border-t border-dashed border-slate-300 text-[10px] text-slate-500 leading-relaxed space-y-1">
             <p className="font-bold text-slate-700">Terms & Conditions:</p>
-            <p>1. <strong>Escrow Protection:</strong> Funds deposited for this trade deal are secured in an RBI-regulated ICICI Bank Escrow Nodal Account under PayShieldX protocol.</p>
+            <p>1. <strong>Escrow Protection:</strong> Funds deposited for this trade deal are secured in an RBI-regulated Indian Bank Escrow Nodal Account under PayShieldX protocol.</p>
             <p>2. <strong>Tranche Releases:</strong> Disbursals are triggered strictly upon verified physical deliverable milestones (QC Mill Certificate, Transporter Lorry Receipt, and Destination Receiving).</p>
             <p>3. <strong>Dispute Resolution:</strong> Quality discrepancies are adjudicated by PayShield Admin with legally binding settlement under the Arbitration & Conciliation Act, 1996.</p>
           </div>
