@@ -252,7 +252,12 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
     const generatedSubId = "PSX-SUB-" + Math.floor(100000 + Math.random() * 900000);
     setSubId(generatedSubId);
 
-    // Register / save auth state
+    // Initial plan tier: free tier unless this is a zero-price plan
+    const initialPlanTier: "buyer_free" | "growth" | "business" | "enterprise" = currentPlan.priceMonthly === 0 
+      ? (currentPlan.id as "buyer_free" | "growth" | "business" | "enterprise")
+      : (user?.plan_tier || (role === "buyer" ? "buyer_free" : "growth"));
+
+    // Register / save initial auth state without premature upgrade
     await register({
       business_name: companyName,
       contact_person: contactPerson || "Authorized Signatory",
@@ -262,7 +267,7 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
       gst: gstin || "27AAAAA1111A1ZA",
       city: city,
       role: role,
-      plan_tier: currentPlan.id,
+      plan_tier: initialPlanTier,
       pass_id: generatedSubId,
     });
 
@@ -320,6 +325,10 @@ export const PlanCheckoutModal: React.FC<PlanCheckoutModalProps> = ({
             });
 
             if (verifyResult.success) {
+              updateUser({
+                plan_tier: currentPlan.id,
+                pass_id: customSubId || subId,
+              });
               setStep("success");
             } else {
               setErrorMsg("Payment verification failed. Please contact support.");

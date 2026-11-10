@@ -214,9 +214,52 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
             </div>
           </div>
 
-          {/* Itemized Table */}
-          <div className="mt-6 rounded-xl border border-slate-300 overflow-x-auto shadow-sm">
-            <table className="w-full min-w-[500px] text-xs text-left border-collapse">
+          {/* Mobile Responsive Card View (sm:hidden) - Zero horizontal clipping or awkward scrolling */}
+          <div className="sm:hidden mt-5 rounded-2xl border-2 border-slate-300 bg-white shadow-sm overflow-hidden">
+            <div className="bg-slate-100 px-4 py-3 flex items-center justify-between border-b border-slate-300">
+              <div className="flex items-center gap-2">
+                <span className="font-mono font-bold text-xs bg-blue-100 text-blue-900 px-2 py-0.5 rounded-md border border-blue-200">
+                  Item #1
+                </span>
+                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider">Proposal Terms</span>
+              </div>
+              <div className="text-right">
+                <span className="text-[10px] text-slate-500 font-semibold block uppercase">Amount</span>
+                <span className="font-mono font-black text-sm text-slate-950">₹{safeFormatINR(baseAmt)}</span>
+              </div>
+            </div>
+            <div className="p-4 space-y-3">
+              <p className="font-extrabold text-sm text-slate-900 leading-snug">
+                {proposal.item_description || "Supply of Precision Cast Flanges & Engineering Components"}
+              </p>
+
+              <div className="space-y-2 text-xs text-slate-700 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
+                <div>
+                  <span className="font-bold text-slate-500 text-[11px] block uppercase">Supplier</span>
+                  <span className="font-extrabold text-slate-900">{proposal.supplier_name || "Bharat Precision Castings Ltd"}</span>
+                  {proposal.supplier_gstin && <span className="ml-1.5 font-mono text-[11px] text-slate-600">({proposal.supplier_gstin})</span>}
+                </div>
+                <div>
+                  <span className="font-bold text-slate-500 text-[11px] block uppercase">Milestone Tranches</span>
+                  <span className="text-slate-800">{proposal.milestones_summary || "20% Advance (QC Cert) • 40% Dispatch (LR Proof) • 40% Delivery (Warehouse Signoff)"}</span>
+                </div>
+                <div>
+                  <span className="font-bold text-slate-500 text-[11px] block uppercase">Delivery Timeline</span>
+                  <span className="font-semibold text-slate-800">{proposal.delivery_timeline || "21 Business Days"}</span>
+                </div>
+                {proposal.notes && (
+                  <div>
+                    <span className="font-bold text-slate-500 text-[11px] block uppercase">Special Terms</span>
+                    <span className="text-slate-800">{proposal.notes}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Desktop / Tablet Itemized Table (hidden on mobile, visible on sm and up) */}
+          <div className="hidden sm:block mt-6 rounded-xl border border-slate-300 overflow-x-auto shadow-sm">
+            <table className="w-full text-xs text-left border-collapse">
               <thead>
                 <tr className="bg-slate-100 text-slate-700 uppercase tracking-wider font-mono text-[11px] border-b border-slate-300">
                   <th className="py-3 px-4 w-12 text-center border-r border-slate-300">S.No.</th>
@@ -231,12 +274,6 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
                     <p className="font-black text-sm text-slate-900">
                       {proposal.item_description || "Supply of Precision Cast Flanges & Engineering Components"}
                     </p>
-
-                    {/* Mobile Visible Quoted Amount Card */}
-                    <div className="sm:hidden flex items-center justify-between p-2.5 rounded-lg bg-blue-50/90 border border-blue-200 my-1">
-                      <span className="text-[11px] font-bold text-blue-900">Quoted Amount:</span>
-                      <span className="font-mono font-black text-sm text-blue-950">₹{safeFormatINR(baseAmt)}</span>
-                    </div>
                     <div className="space-y-1 text-slate-600 text-[11px] bg-slate-50 p-3 rounded-lg border border-slate-200/80">
                       <div>
                         <strong className="text-slate-800">Supplier:</strong> {proposal.supplier_name || "Bharat Precision Castings Ltd"} 
@@ -261,10 +298,6 @@ export const ProposalViewerModal: React.FC<ProposalViewerModalProps> = ({
                 </tr>
               </tbody>
             </table>
-          </div>
-          <div className="sm:hidden flex items-center justify-between text-[10px] text-slate-500 mt-1 px-1">
-            <span>Scroll table horizontally for full breakdown</span>
-            <span className="font-mono text-blue-600 font-bold">⇄ Swipe</span>
           </div>
 
           {/* Pricing & Tax Summary with Bank Transfer Details */}

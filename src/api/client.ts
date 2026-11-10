@@ -14,6 +14,30 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8080/api/v1";
 
+function getAuthHeaders(customHeaders: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = { ...customHeaders };
+  try {
+    const raw = localStorage.getItem("payshield_auth_user");
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed?.token) {
+        headers["Authorization"] = `Bearer ${parsed.token}`;
+      }
+    }
+  } catch {
+    // Ignore error
+  }
+  return headers;
+}
+
+async function authFetch(url: string, init?: RequestInit): Promise<Response> {
+  const headers = getAuthHeaders(init?.headers as Record<string, string> || {});
+  return fetch(url, {
+    ...init,
+    headers,
+  });
+}
+
 export const INITIAL_SUMMARY: EscrowSummary = {
   total_locked_inr: 2000000,
   total_released_inr: 500000,
@@ -101,7 +125,7 @@ export async function fetchEscrowSummary(): Promise<EscrowSummary> {
 
 export async function fetchContracts(): Promise<Contract[]> {
   try {
-    const res = await fetch(`${API_BASE}/contracts`);
+    const res = await authFetch(`${API_BASE}/contracts`);
     if (!res.ok) throw new Error("API error");
     const json = await res.json();
     return json.data;
@@ -112,7 +136,7 @@ export async function fetchContracts(): Promise<Contract[]> {
 
 export async function createContract(payload: Partial<Contract>): Promise<Contract> {
   try {
-    const res = await fetch(`${API_BASE}/contracts`, {
+    const res = await authFetch(`${API_BASE}/contracts`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -147,7 +171,7 @@ export async function createContract(payload: Partial<Contract>): Promise<Contra
 
 export async function submitMilestoneProof(milestoneId: string, proofUrl: string, notes: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/milestones/${milestoneId}/submit-proof`, {
+    const res = await authFetch(`${API_BASE}/milestones/${milestoneId}/submit-proof`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -163,7 +187,7 @@ export async function submitMilestoneProof(milestoneId: string, proofUrl: string
 
 export async function approveMilestone(milestoneId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/milestones/${milestoneId}/approve-release`, {
+    const res = await authFetch(`${API_BASE}/milestones/${milestoneId}/approve-release`, {
       method: "POST",
     });
     return res.ok;
@@ -174,7 +198,7 @@ export async function approveMilestone(milestoneId: string): Promise<boolean> {
 
 export async function fetchProposals(): Promise<Proposal[]> {
   try {
-    const res = await fetch(`${API_BASE}/proposals`);
+    const res = await authFetch(`${API_BASE}/proposals`);
     if (!res.ok) throw new Error("API error");
     const json = await res.json();
     return json.data;
@@ -185,7 +209,7 @@ export async function fetchProposals(): Promise<Proposal[]> {
 
 export async function createProposal(payload: Partial<Proposal>): Promise<Proposal | null> {
   try {
-    const res = await fetch(`${API_BASE}/proposals`, {
+    const res = await authFetch(`${API_BASE}/proposals`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -244,7 +268,7 @@ export async function createProposal(payload: Partial<Proposal>): Promise<Propos
 
 export async function approveProposal(proposalId: string, role: "buyer" | "supplier"): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/proposals/${proposalId}/approve`, {
+    const res = await authFetch(`${API_BASE}/proposals/${proposalId}/approve`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ role }),
@@ -257,7 +281,7 @@ export async function approveProposal(proposalId: string, role: "buyer" | "suppl
 
 export async function shipProposal(proposalId: string, lrNumber: string, transporter: string, proofUrl: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/proposals/${proposalId}/ship`, {
+    const res = await authFetch(`${API_BASE}/proposals/${proposalId}/ship`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ lr_number: lrNumber, transporter_name: transporter, proof_url: proofUrl }),
@@ -270,7 +294,7 @@ export async function shipProposal(proposalId: string, lrNumber: string, transpo
 
 export async function confirmDeliveryProposal(proposalId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/proposals/${proposalId}/confirm-delivery`, {
+    const res = await authFetch(`${API_BASE}/proposals/${proposalId}/confirm-delivery`, {
       method: "POST",
     });
     return res.ok;
@@ -287,7 +311,7 @@ export async function raiseDispute(payload: {
   claim_amount: number;
 }): Promise<Dispute> {
   try {
-    const res = await fetch(`${API_BASE}/disputes`, {
+    const res = await authFetch(`${API_BASE}/disputes`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -310,7 +334,7 @@ export async function raiseDispute(payload: {
 
 export async function submitSupportTicket(ticket: { name: string; company: string; email: string; phone: string; message: string }): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/support/tickets`, {
+    const res = await authFetch(`${API_BASE}/support/tickets`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(ticket),
@@ -353,7 +377,7 @@ export async function verifyGSTIN(gstin: string): Promise<{ valid: boolean; lega
 
 export async function fetchDisputes(): Promise<Dispute[]> {
   try {
-    const res = await fetch(`${API_BASE}/disputes`);
+    const res = await authFetch(`${API_BASE}/disputes`);
     if (!res.ok) throw new Error("API error");
     const json = await res.json();
     return json.data || [];
@@ -374,7 +398,7 @@ export async function fetchDisputes(): Promise<Dispute[]> {
 
 export async function arbitrateDispute(disputeId: string, verdict: string, buyerRefundShare: number, sellerReleaseShare: number): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/disputes/${disputeId}/arbitrate`, {
+    const res = await authFetch(`${API_BASE}/disputes/${disputeId}/arbitrate`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -391,7 +415,7 @@ export async function arbitrateDispute(disputeId: string, verdict: string, buyer
 
 export async function fetchLedgerJournals(): Promise<any[]> {
   try {
-    const res = await fetch(`${API_BASE}/ledger/journals`);
+    const res = await authFetch(`${API_BASE}/ledger/journals`);
     if (!res.ok) throw new Error("API error");
     const json = await res.json();
     return json.data || [];
@@ -432,7 +456,7 @@ export async function sendEmailOTP(email: string, purpose: "register" | "forgot_
     const json = await res.json();
     return { success: res.ok, message: json.message || "OTP sent" };
   } catch {
-    return { success: true, message: "Verification code generated (Test Mode)" };
+    return { success: false, message: "Unable to reach verification service. Please try again." };
   }
 }
 
@@ -445,14 +469,11 @@ export async function verifyEmailOTP(email: string, otp: string, purpose: "regis
     });
     const json = await res.json();
     if (!res.ok) {
-      return { success: false, message: json.message || "Invalid or expired OTP" };
+      return { success: false, message: json.error || json.message || "Invalid or expired OTP" };
     }
     return { success: true, message: "Email verified successfully" };
   } catch {
-    if (otp === "849201" || otp === "123456" || otp.length === 6) {
-      return { success: true, message: "Email verified (Fallback Mode)" };
-    }
-    return { success: false, message: "Invalid OTP" };
+    return { success: false, message: "Verification failed. Please check your network and try again." };
   }
 }
 
@@ -465,11 +486,11 @@ export async function resetPasswordAPI(email: string, otp: string, newPassword: 
     });
     const json = await res.json();
     if (!res.ok) {
-      return { success: false, message: json.message || "Failed to reset password" };
+      return { success: false, message: json.error || json.message || "Failed to reset password" };
     }
     return { success: true, message: json.message, user: json.data?.user, token: json.data?.token };
   } catch {
-    return { success: true, message: "Password updated successfully" };
+    return { success: false, message: "Failed to reset password. Please verify connection and retry." };
   }
 }
 
@@ -479,7 +500,7 @@ export async function resetPasswordAPI(email: string, otp: string, newPassword: 
 
 export async function fetchAdminStats(): Promise<AdminBusinessHealthStats> {
   try {
-    const res = await fetch(`${API_BASE}/admin/stats`);
+    const res = await authFetch(`${API_BASE}/admin/stats`);
     if (!res.ok) throw new Error("API error");
     const json = await res.json();
     return json.data;
@@ -511,7 +532,7 @@ export async function fetchAdminStats(): Promise<AdminBusinessHealthStats> {
 
 export async function fetchAdminBuyers(): Promise<BuyerRecord[]> {
   try {
-    const res = await fetch(`${API_BASE}/admin/buyers`);
+    const res = await authFetch(`${API_BASE}/admin/buyers`);
     if (!res.ok) throw new Error("API error");
     const json = await res.json();
     return json.data || [];
@@ -607,7 +628,7 @@ export async function fetchAdminBuyers(): Promise<BuyerRecord[]> {
 
 export async function fetchAdminSuppliers(): Promise<SupplierRecord[]> {
   try {
-    const res = await fetch(`${API_BASE}/admin/suppliers`);
+    const res = await authFetch(`${API_BASE}/admin/suppliers`);
     if (!res.ok) throw new Error("API error");
     const json = await res.json();
     return json.data || [];
@@ -755,7 +776,7 @@ export async function fetchAdminSuppliers(): Promise<SupplierRecord[]> {
 
 export async function fetchAdminFinance(): Promise<AdminFinanceStats> {
   try {
-    const res = await fetch(`${API_BASE}/admin/finance`);
+    const res = await authFetch(`${API_BASE}/admin/finance`);
     if (!res.ok) throw new Error("API error");
     const json = await res.json();
     return json.data;
@@ -816,7 +837,7 @@ export async function fetchAdminFinance(): Promise<AdminFinanceStats> {
 
 export async function verifyAdminKYC(userId: string, status: string, notes?: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE}/admin/kyc/${userId}/verify`, {
+    const res = await authFetch(`${API_BASE}/admin/kyc/${userId}/verify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status, notes }),
@@ -829,7 +850,7 @@ export async function verifyAdminKYC(userId: string, status: string, notes?: str
 
 export async function processAdminSettlement(settlementId: string): Promise<{ success: boolean; utr_number?: string }> {
   try {
-    const res = await fetch(`${API_BASE}/admin/settlements/${settlementId}/payout`, {
+    const res = await authFetch(`${API_BASE}/admin/settlements/${settlementId}/payout`, {
       method: "POST",
     });
     const json = await res.json();

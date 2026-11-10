@@ -81,7 +81,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     try {
       if (user) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+        const { password, ...safeUser } = user as any;
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(safeUser));
       } else {
         localStorage.removeItem(STORAGE_KEY);
       }
@@ -187,6 +188,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Offline / in-memory fallback
     }
 
+    delete (newUser as any).password;
     setUser(newUser);
     return { success: true, message: "Account onboarded & Pass Activated", user: newUser };
   };
@@ -203,8 +205,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(updated);
   };
 
-  const demoLogin = (role: "buyer" | "supplier") => {
-    setUser(DEMO_ACCOUNTS[role] || DEMO_ACCOUNTS.buyer);
+  const demoLogin = async (role: "buyer" | "supplier") => {
+    const creds = role === "supplier" 
+      ? { email: "sales@bharatcastings.com", pass: "Bharat@Shield2026" }
+      : { email: "procurement@apexauto.in", pass: "Apex@Shield2026" };
+    
+    const res = await login(creds.email, creds.pass, role);
+    if (!res.success) {
+      setUser(DEMO_ACCOUNTS[role] || DEMO_ACCOUNTS.buyer);
+    }
   };
 
   return (
